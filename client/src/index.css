@@ -1,0 +1,296 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-slate-dark: #0F172A;
+  --color-slate-card: #1E293B;
+  --color-btp-blue: #0284C7;
+  --color-btp-blue-dark: #0369A1;
+  --color-btp-orange: #EA580C;
+  --color-btp-orange-light: #FB923C;
+  --color-btp-green: #16A34A;
+  --color-btp-red: #DC2626;
+  --color-btp-amber: #D97706;
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+/* ===== DARK THEME (Default) ===== */
+:root {
+  --bg-primary: #0F172A;
+  --bg-secondary: #1E293B;
+  --bg-tertiary: #334155;
+  --bg-input: #0F172A;
+  --bg-hover: rgba(30, 41, 59, 0.5);
+  --bg-card: rgba(30, 41, 59, 0.8);
+  --border-primary: #334155;
+  --border-secondary: rgba(51, 65, 85, 0.5);
+  --text-primary: #FFFFFF;
+  --text-secondary: #CBD5E1;
+  --text-tertiary: #94A3B8;
+  --text-muted: #64748B;
+  --scrollbar-track: #0F172A;
+  --scrollbar-thumb: #334155;
+  --scrollbar-thumb-hover: #475569;
+  --overlay-bg: rgba(15, 23, 42, 0.8);
+  --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.2);
+  --chart-grid: #334155;
+  --chart-text: #94A3B8;
+  --chart-tick: #CBD5E1;
+}
+
+/* ===== LIGHT THEME ===== */
+:root.light {
+  --bg-primary: #F8FAFC;
+  --bg-secondary: #FFFFFF;
+  --bg-tertiary: #E2E8F0;
+  --bg-input: #F1F5F9;
+  --bg-hover: rgba(241, 245, 249, 0.8);
+  --bg-card: rgba(255, 255, 255, 0.9);
+  --border-primary: #CBD5E1;
+  --border-secondary: rgba(203, 213, 225, 0.5);
+  --text-primary: #0F172A;
+  --text-secondary: #334155;
+  --text-tertiary: #64748B;
+  --text-muted: #94A3B8;
+  --scrollbar-track: #F1F5F9;
+  --scrollbar-thumb: #CBD5E1;
+  --scrollbar-thumb-hover: #94A3B8;
+  --overlay-bg: rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+  --chart-grid: #E2E8F0;
+  --chart-text: #64748B;
+  --chart-tick: #475569;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-secondary);
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* Base Card Styles with Glassmorphism */
+.glass-card {
+  background-color: var(--bg-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-secondary);
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-card);
+  transition: all 0.3s ease;
+}
+
+/* Theme transition helper */
+.theme-transition {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Theme toggle button animation */
+.theme-toggle-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-toggle-btn .icon-sun,
+.theme-toggle-btn .icon-moon {
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+}
+
+.theme-toggle-btn .icon-sun {
+  transform: rotate(0deg) scale(1);
+  opacity: 1;
+}
+
+.theme-toggle-btn .icon-moon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(90deg) scale(0);
+  opacity: 0;
+}
+
+.light .theme-toggle-btn .icon-sun {
+  transform: rotate(-90deg) scale(0);
+  opacity: 0;
+}
+
+.light .theme-toggle-btn .icon-moon {
+  transform: rotate(0deg) scale(1);
+  opacity: 1;
+}
+
+/* ===== CUSTOM STYLING FOR FORM CONTROLS (THEME-AWARE) ===== */
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="tel"],
+input[type="date"],
+select,
+textarea {
+  background-color: var(--bg-input) !important;
+  border-color: var(--border-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--color-btp-blue) !important;
+}
+
+/* ===== LIGHT MODE READABILITY OVERRIDES ===== */
+.light .text-white:not(button):not(a):not(.bg-btp-blue):not(.bg-btp-blue-dark):not(.bg-btp-orange):not(.bg-btp-green):not(.bg-btp-red):not(.bg-slate-700):not(.bg-\[\#0284C7\]):not(.bg-\[\#ea580c\]):not(.bg-\[\#16a34a\]):not(.bg-\[\#dc2626\]):not(.animate-spin) {
+  color: var(--text-primary) !important;
+}
+
+.light .text-slate-100:not(button):not(a):not(.bg-btp-blue):not(.bg-btp-blue-dark):not(.bg-btp-orange):not(.bg-btp-green):not(.bg-btp-red):not(.bg-slate-700) {
+  color: var(--text-primary) !important;
+}
+
+.light .text-slate-200:not(button):not(a):not(.bg-btp-blue):not(.bg-btp-blue-dark):not(.bg-btp-orange):not(.bg-btp-green):not(.bg-btp-red):not(.bg-slate-700) {
+  color: var(--text-primary) !important;
+}
+
+.light .text-slate-300:not(button):not(a):not(.bg-btp-blue):not(.bg-btp-blue-dark):not(.bg-btp-orange):not(.bg-btp-green):not(.bg-btp-red):not(.bg-slate-700) {
+  color: var(--text-secondary) !important;
+}
+
+.light .text-slate-400:not(button):not(a):not(.bg-btp-blue):not(.bg-btp-blue-dark):not(.bg-btp-orange):not(.bg-btp-green):not(.bg-btp-red):not(.bg-slate-700) {
+  color: var(--text-tertiary) !important;
+}
+
+/* Light mode background overrides */
+.light .bg-slate-800 {
+  background-color: var(--bg-tertiary) !important;
+}
+
+.light .border-slate-800,
+.light .border-slate-700,
+.light .border-slate-700\/50 {
+  border-color: var(--border-primary) !important;
+}
+
+.light .bg-\[\#0F172A\] {
+  background-color: var(--bg-primary) !important;
+}
+
+.light .bg-\[\#1E293B\] {
+  background-color: var(--bg-secondary) !important;
+}
+
+.light .bg-slate-800\/30 {
+  background-color: var(--bg-hover) !important;
+}
+
+.light .bg-slate-800\/50 {
+  background-color: var(--bg-hover) !important;
+}
+
+.light .bg-\[\#1E293B\]\/80 {
+  background-color: var(--bg-card) !important;
+}
+
+/* Direct tag overrides for forms in light mode */
+.light label {
+  color: var(--text-primary) !important; /* Make labels dark slate for maximum visibility */
+  font-weight: 500 !important;
+}
+
+.light input,
+.light select,
+.light textarea {
+  background-color: var(--bg-secondary) !important; /* Clean white background for inputs in light mode */
+  border-color: var(--border-primary) !important;
+  color: var(--text-primary) !important; /* Dark text inside inputs */
+}
+
+.light input::placeholder,
+.light textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+.light select option {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* ===== PRINT STYLING FOR PDF EXPORT ===== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    background-color: white !important;
+    color: black !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Do NOT hide #root completely because #print-area is inside it! */
+  header,
+  aside,
+  nav,
+  button,
+  select,
+  input,
+  .glass-card,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Overlay #print-area over the entire printable document */
+  #print-area {
+    display: block !important;
+    visibility: visible !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 999999 !important;
+    background-color: white !important;
+    color: black !important;
+    box-sizing: border-box !important;
+  }
+
+  #print-area * {
+    visibility: visible !important;
+  }
+}
+
+
+
+
+
