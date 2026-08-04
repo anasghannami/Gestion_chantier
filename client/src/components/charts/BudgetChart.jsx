@@ -51,11 +51,11 @@ export default function BudgetChart({ data }) {
           >
             <CartesianGrid strokeDasharray="3 3" stroke={gridColor} horizontal={true} vertical={false} />
             <XAxis type="number" stroke={textColor} tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`} />
-            <YAxis dataKey="nom" type="category" stroke={textColor} width={100} tick={{ fill: tickColor, fontSize: 12 }} />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: gridColor, opacity: 0.4 }} />
+            <YAxis dataKey="nom" type="category" stroke={textColor} width={120} tick={{ fill: tickColor, fontSize: 12 }} />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: gridColor, opacity: 0.4 }} wrapperStyle={{ zIndex: 1000 }} />
             <Legend wrapperStyle={{ paddingTop: '20px' }} />
-            <Bar dataKey="budget_previsionnel" name="Budget Prévisionnel" fill="#0284C7" radius={[0, 4, 4, 0]} />
-            <Bar dataKey="budget_consomme" name="Budget Consommé" fill="#EA580C" radius={[0, 4, 4, 0]} />
+            <Bar dataKey="budget_previsionnel" name="Budget Prévisionnel" fill="#0284C7" radius={[0, 4, 4, 0]} minPointSize={14} />
+            <Bar dataKey="budget_consomme" name="Budget Consommé" fill="#EA580C" radius={[0, 4, 4, 0]} minPointSize={14} />
           </BarChart>
         </ResponsiveContainer>
       </div>

@@ -1,29 +1,35 @@
 import 'dotenv/config';
 import pg from 'pg';
 import bcrypt from 'bcryptjs';
-import { sequelize, Utilisateur, Chantier, Fournisseur, Commande, Facture } from '../models/index.js';
+import { 
+  sequelize, Utilisateur, Chantier, Fournisseur, Commande, Facture, Devis, DevisLigne,
+  Ouvrier, EnginEquipement, PhaseChantier, JalonPermis, AffectationRessource
+} from '../models/index.js';
 
 const seed = async () => {
   try {
-    console.log('Connexion au serveur PostgreSQL pour vérifier la base de données...');
-    const { Client } = pg;
-    const client = new Client({
-      host: process.env.DB_HOST || 'localhost',
-      user: process.env.DB_USER || 'postgres',
-      password: process.env.DB_PASS || 'postgres',
-      port: process.env.DB_PORT || 5432,
-      database: 'postgres' // connect to default database first
-    });
+    if (process.env.DB_DIALECT === 'postgres') {
+      console.log('Connexion au serveur PostgreSQL pour vérifier la base de données...');
+      const { Client } = pg;
+      const client = new Client({
+        host: process.env.DB_HOST || 'localhost',
+        user: process.env.DB_USER || 'postgres',
+        password: process.env.DB_PASS || 'postgres',
+        port: process.env.DB_PORT || 5432,
+        database: 'postgres'
+      });
 
-    await client.connect();
-    const dbName = process.env.DB_NAME || 'gestion_chantier';
-    const res = await client.query(`SELECT 1 FROM pg_database WHERE datname = $1`, [dbName]);
-    if (res.rowCount === 0) {
-      console.log(`Création de la base de données PostgreSQL "${dbName}"...`);
-      await client.query(`CREATE DATABASE "${dbName}"`);
+      await client.connect();
+      const dbName = process.env.DB_NAME || 'gestion_chantier';
+      const res = await client.query(`SELECT 1 FROM pg_database WHERE datname = $1`, [dbName]);
+      if (res.rowCount === 0) {
+        console.log(`Création de la base de données PostgreSQL "${dbName}"...`);
+        await client.query(`CREATE DATABASE "${dbName}"`);
+      }
+      await client.end();
+      console.log('Base de données prête.');
     }
-    await client.end();
-    console.log('Base de données prête.');
+
 
     console.log('Synchronisation des modèles avec la base de données...');
     await sequelize.sync({ force: true });
@@ -89,6 +95,147 @@ const seed = async () => {
       { num_facture: 'FAC-008', fournisseur_id: 1, chantier_id: 2, date_emission: '2024-09-28', date_echeance: '2024-10-28', montant_ht: 65000, montant_tva: 13000, montant_ttc: 78000, statut_paiement: 'En attente' },
       { num_facture: 'FAC-009', fournisseur_id: 2, chantier_id: 1, date_emission: '2024-03-25', date_echeance: '2024-05-09', montant_ht: 120000, montant_tva: 24000, montant_ttc: 144000, statut_paiement: 'Échue' },
       { num_facture: 'FAC-010', fournisseur_id: 5, chantier_id: 2, date_emission: '2024-05-15', date_echeance: '2024-06-15', montant_ht: 25000, montant_tva: 5000, montant_ttc: 30000, statut_paiement: 'Partiellement payée' }
+    ]);
+
+    console.log('Création des devis...');
+    const d1 = await Devis.create({
+      num_devis: 'DEV-2026-001',
+      client_nom: 'Société Immobilière Rabat',
+      client_email: 'contact@immorabat.ma',
+      client_telephone: '0537001122',
+      client_adresse: 'Avenue de France, Rabat',
+      chantier_id: 1,
+      statut: 'Accepté',
+      date_creation: '2026-01-15',
+      date_validite: '2026-03-15',
+      montant_ht: 450000,
+      tva: 20,
+      montant_ttc: 540000,
+      notes: 'Devis pour travaux de terrassement et fondations.'
+    });
+    await DevisLigne.bulkCreate([
+      { devis_id: d1.id, designation: 'Terrassement et décapage du sol', quantite: 1500, unite: 'm³', prix_unitaire: 180, total_ligne: 270000 },
+      { devis_id: d1.id, designation: 'Béton de propreté dosé à 250 kg/m³', quantite: 300, unite: 'm³', prix_unitaire: 600, total_ligne: 180000 }
+    ]);
+
+    const d2 = await Devis.create({
+      num_devis: 'DEV-2026-002',
+      client_nom: 'Residences Tanger SARL',
+      client_email: 'info@tanger-residences.com',
+      client_telephone: '0539887766',
+      client_adresse: 'Boulevard Mohamed V, Tanger',
+      statut: 'Envoyé',
+      date_creation: '2026-02-01',
+      date_validite: '2026-04-01',
+      montant_ht: 180000,
+      tva: 20,
+      montant_ttc: 216000,
+      notes: 'Fourniture et pose menuiserie aluminium haut de gamme.'
+    });
+    await DevisLigne.bulkCreate([
+      { devis_id: d2.id, designation: 'Fenêtres coulissantes Alu double vitrage', quantite: 40, unite: 'u', prix_unitaire: 3500, total_ligne: 140000 },
+      { devis_id: d2.id, designation: 'Portes fenêtres coulissantes Alu', quantite: 8, unite: 'u', prix_unitaire: 5000, total_ligne: 40000 }
+    ]);
+
+    const d3 = await Devis.create({
+      num_devis: 'DEV-2026-003',
+      client_nom: 'Ministère de l\'Éducation',
+      client_email: 'marches@education.gov.ma',
+      statut: 'Brouillon',
+      date_creation: '2026-02-10',
+      date_validite: '2026-05-10',
+      montant_ht: 320000,
+      tva: 20,
+      montant_ttc: 384000
+    });
+    await DevisLigne.bulkCreate([
+      { devis_id: d3.id, designation: 'Rénovation peinture bâtiment A', quantite: 2500, unite: 'm²', prix_unitaire: 80, total_ligne: 200000 },
+      { devis_id: d3.id, designation: 'Réfection étanchéité toiture terrasse', quantite: 800, unite: 'm²', prix_unitaire: 150, total_ligne: 120000 }
+    ]);
+
+    console.log('Création des ouvriers...');
+    await Ouvrier.bulkCreate([
+      { nom: 'El Amrani', prenom: 'Hassan', specialite: 'Chef d\'équipe Maçonnerie', telephone: '0661122334', statut: 'Actif', tarif_journalier: 350, chantier_id: 1 },
+      { nom: 'Bennani', prenom: 'Rachid', specialite: 'Électricien BTP', telephone: '0662233445', statut: 'Actif', tarif_journalier: 300, chantier_id: 1 },
+      { nom: 'Kabbaj', prenom: 'Mustapha', specialite: 'Plombier Sanitaire', telephone: '0663344556', statut: 'Actif', tarif_journalier: 280, chantier_id: 2 },
+      { nom: 'Chraibi', prenom: 'Omar', specialite: 'Conducteur d\'Engins', telephone: '0664455667', statut: 'Actif', tarif_journalier: 400, chantier_id: 2 }
+    ]);
+
+    console.log('Création des engins et équipements...');
+    await EnginEquipement.bulkCreate([
+      { code: 'ENG-101', nom: 'Grue à Tour Potain 50T', type: 'Grue', cout_journalier: 2500, statut: 'En service' },
+      { code: 'ENG-102', nom: 'Bétonnière Autochargeuse 3.5m³', type: 'Bétonnière', cout_journalier: 1200, statut: 'En service' },
+      { code: 'ENG-103', nom: 'Pelle Hydraulique CAT 320', type: 'Pelleteuse', cout_journalier: 1800, statut: 'Disponible' },
+      { code: 'ENG-104', nom: 'Système Coffrage Métallique Doka', type: 'Coffrage', cout_journalier: 800, statut: 'En service' }
+    ]);
+
+    console.log('Création des phases de chantier...');
+    const p1 = await PhaseChantier.create({
+      nom: 'Préparation du Terrain & Installation',
+      ordre: 1,
+      date_debut: '2026-08-01',
+      date_fin: '2026-08-10',
+      duree_jours: 10,
+      pourcentage_avancement: 100,
+      statut: 'Terminée',
+      est_critique: true,
+      chantier_id: 1,
+      cout_prevu: 45000
+    });
+
+    const p2 = await PhaseChantier.create({
+      nom: 'Terrassement & Fouilles',
+      ordre: 2,
+      date_debut: '2026-08-11',
+      date_fin: '2026-08-25',
+      duree_jours: 15,
+      pourcentage_avancement: 60,
+      statut: 'En cours',
+      est_critique: true,
+      predecesseur_id: p1.id,
+      chantier_id: 1,
+      cout_prevu: 120000
+    });
+
+    const p3 = await PhaseChantier.create({
+      nom: 'Fondations & Longrines',
+      ordre: 3,
+      date_debut: '2026-08-26',
+      date_fin: '2026-09-15',
+      duree_jours: 20,
+      pourcentage_avancement: 0,
+      statut: 'À faire',
+      est_critique: true,
+      predecesseur_id: p2.id,
+      chantier_id: 1,
+      cout_prevu: 280000
+    });
+
+    const p4 = await PhaseChantier.create({
+      nom: 'Gros Œuvre & Structure Béton Armé',
+      ordre: 4,
+      date_debut: '2026-09-16',
+      date_fin: '2026-11-30',
+      duree_jours: 75,
+      pourcentage_avancement: 0,
+      statut: 'À faire',
+      est_critique: true,
+      predecesseur_id: p3.id,
+      chantier_id: 1,
+      cout_prevu: 1500000
+    });
+
+    console.log('Création des jalons et permis...');
+    await JalonPermis.bulkCreate([
+      { chantier_id: 1, titre: 'Obtention Autorisation de Construire', type_jalon: 'Autorisation de construire', date_prevue: '2026-07-15', date_obtention: '2026-07-20', statut: 'Validé' },
+      { chantier_id: 1, titre: 'Réception Provisoire des Fondations', type_jalon: 'Réception provisoire', date_prevue: '2026-09-16', statut: 'En attente' },
+      { chantier_id: 2, titre: 'Permis d\'Habiter & Conformité', type_jalon: 'Permis d\'habiter', date_prevue: '2026-12-01', statut: 'En attente' }
+    ]);
+
+    console.log('Création des affectations de ressources...');
+    await AffectationRessource.bulkCreate([
+      { phase_id: p2.id, ouvrier_id: 1, engin_id: 3, date_debut: '2026-08-11', date_fin: '2026-08-25', heures_prevues: 8, taux_charge: 100 },
+      { phase_id: p3.id, ouvrier_id: 2, engin_id: 2, date_debut: '2026-08-26', date_fin: '2026-09-15', heures_prevues: 8, taux_charge: 100 }
     ]);
 
     console.log('Données injectées avec succès !');

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { Plus, LayoutGrid, List, MapPin, Calendar, Loader2 } from 'lucide-react';
+import { Plus, LayoutGrid, List, MapPin, Calendar, Loader2, FileSpreadsheet, Download } from 'lucide-react';
 import DataTable from '../components/ui/DataTable';
 import Badge from '../components/ui/Badge';
 import Modal from '../components/ui/Modal';
 import api from '../api/axios';
+import { exportToExcel, exportToPDF } from '../utils/exportUtils';
 
 export default function Chantiers() {
   const [chantiers, setChantiers] = useState([]);
@@ -13,6 +14,37 @@ export default function Chantiers() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+
+  const handleExportExcel = () => {
+    const exportColumns = [
+      { header: 'Code Chantier', accessor: 'code_chantier' },
+      { header: 'Nom Chantier', accessor: 'nom' },
+      { header: 'Client', accessor: 'client_nom' },
+      { header: 'Adresse', accessor: 'adresse' },
+      { header: 'Date Début', renderText: (row) => row.date_debut ? new Date(row.date_debut).toLocaleDateString('fr-FR') : '—' },
+      { header: 'Fin Prévue', renderText: (row) => row.date_fin_prevue ? new Date(row.date_fin_prevue).toLocaleDateString('fr-FR') : '—' },
+      { header: 'Budget Prévisionnel (MAD)', accessor: 'budget_previsionnel' },
+      { header: 'Statut', accessor: 'statut' }
+    ];
+    exportToExcel(exportColumns, chantiers, 'Liste_Chantiers_BTP');
+  };
+
+  const handleExportPDF = () => {
+    const exportColumns = [
+      { header: 'Code', accessor: 'code_chantier' },
+      { header: 'Nom Chantier', accessor: 'nom' },
+      { header: 'Client', renderText: (row) => row.client_nom || '—' },
+      { header: 'Budget Prévisionnel', renderText: (row) => `${row.budget_previsionnel || 0} MAD` },
+      { header: 'Statut', accessor: 'statut' }
+    ];
+    exportToPDF({
+      title: 'Liste des Chantiers & Projets BTP',
+      subtitle: `Total chantiers : ${chantiers.length}`,
+      columns: exportColumns,
+      data: chantiers,
+      filename: 'Liste_Chantiers_BTP'
+    });
+  };
 
   const [formData, setFormData] = useState({
     code_chantier: '', nom: '', client_nom: '', adresse: '', date_debut: '', date_fin_prevue: '', budget_previsionnel: '', statut: 'En préparation'
@@ -68,17 +100,19 @@ export default function Chantiers() {
     { header: 'Client', accessor: 'client_nom' },
     { header: 'Statut', accessor: 'statut', render: (row) => <Badge status={row.statut} /> },
     { header: 'Budget', accessor: 'budget_previsionnel', render: (row) => formatMAD(row.budget_previsionnel) },
-    { header: 'Consommé', accessor: 'budget_consomme', render: (row) => {
-      const prog = getProgression(row);
-      return (
-        <div className="flex items-center gap-3">
-          <div className="w-full max-w-[80px] bg-slate-700 rounded-full h-2">
-            <div className={`h-2 rounded-full transition-all ${prog >= 100 ? 'bg-btp-red' : prog > 70 ? 'bg-btp-orange' : 'bg-btp-blue'}`} style={{ width: `${prog}%` }}></div>
+    {
+      header: 'Consommé', accessor: 'budget_consomme', render: (row) => {
+        const prog = getProgression(row);
+        return (
+          <div className="flex items-center gap-3">
+            <div className="w-full max-w-[80px] bg-slate-700 rounded-full h-2">
+              <div className={`h-2 rounded-full transition-all ${prog >= 100 ? 'bg-btp-red' : prog > 70 ? 'bg-btp-orange' : 'bg-btp-blue'}`} style={{ width: `${prog}%` }}></div>
+            </div>
+            <span className="text-xs text-slate-400">{prog}%</span>
           </div>
-          <span className="text-xs text-slate-400">{prog}%</span>
-        </div>
-      );
-    }}
+        );
+      }
+    }
   ];
 
   if (loading) {
@@ -93,38 +127,56 @@ export default function Chantiers() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl font-bold text-white">Chantiers</h1>
-        
-        <div className="flex items-center gap-3">
+
+        <div className="flex flex-wrap items-center gap-3">
           <div className="flex bg-slate-800 rounded-lg p-1">
-            <button 
+            <button
               onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-btp-blue text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`}
+              className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-btp-blue text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`}
+              title="Vue en grille"
             >
-              <LayoutGrid className="h-5 w-5" />
+              <LayoutGrid className="h-4 w-4" />
             </button>
-            <button 
+            <button
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-btp-blue text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`}
+              className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-btp-blue text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`}
+              title="Vue en liste"
             >
-              <List className="h-5 w-5" />
+              <List className="h-4 w-4" />
             </button>
           </div>
-          
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center px-4 py-2 bg-btp-blue hover:bg-btp-blue-dark text-white rounded-lg transition-colors font-medium"
+
+          <button
+            onClick={handleExportExcel}
+            className="flex items-center px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow active:scale-95 whitespace-nowrap"
+            title="Exporter la liste des chantiers sous Excel"
           >
-            <Plus className="h-5 w-5 mr-2" />
+            <FileSpreadsheet className="h-4 w-4 mr-1.5" /> Export Excel
+          </button>
+
+          <button
+            onClick={handleExportPDF}
+            className="flex items-center px-3.5 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow active:scale-95 whitespace-nowrap"
+            title="Exporter la liste des chantiers au format PDF"
+          >
+            <Download className="h-4 w-4 mr-1.5" /> Liste PDF
+          </button>
+
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center px-4 py-2 bg-btp-blue hover:bg-btp-blue-dark text-white rounded-lg transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow active:scale-95 whitespace-nowrap"
+          >
+            <Plus className="h-4 w-4 mr-1.5" />
             Nouveau Chantier
           </button>
         </div>
       </div>
 
       {viewMode === 'list' ? (
-        <DataTable 
-          columns={columns} 
-          data={chantiers} 
-          searchable 
+        <DataTable
+          columns={columns}
+          data={chantiers}
+          searchable
           searchPlaceholder="Rechercher un chantier..."
           onRowClick={(row) => navigate(`/chantiers/${row.id}`)}
         />
@@ -133,8 +185,8 @@ export default function Chantiers() {
           {chantiers.map(chantier => {
             const prog = getProgression(chantier);
             return (
-              <div 
-                key={chantier.id} 
+              <div
+                key={chantier.id}
                 onClick={() => navigate(`/chantiers/${chantier.id}`)}
                 className="glass-card p-6 cursor-pointer hover:border-btp-blue/50 group"
               >
@@ -146,7 +198,7 @@ export default function Chantiers() {
                   </div>
                   <Badge status={chantier.statut} />
                 </div>
-                
+
                 <div className="space-y-2 mb-6">
                   {chantier.adresse && (
                     <div className="flex items-center text-sm text-slate-400">
@@ -188,39 +240,39 @@ export default function Chantiers() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">Code Chantier</label>
-              <input type="text" required className="w-full bg-[#0F172A] border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-btp-blue outline-none" placeholder="CH-2024-006" value={formData.code_chantier} onChange={e => setFormData({...formData, code_chantier: e.target.value})} />
+              <input type="text" required className="w-full bg-[#0F172A] border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-btp-blue outline-none" placeholder="CH-2024-006" value={formData.code_chantier} onChange={e => setFormData({ ...formData, code_chantier: e.target.value })} />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">Nom du chantier</label>
-              <input type="text" required className="w-full bg-[#0F172A] border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-btp-blue outline-none" value={formData.nom} onChange={e => setFormData({...formData, nom: e.target.value})} />
+              <input type="text" required className="w-full bg-[#0F172A] border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-btp-blue outline-none" value={formData.nom} onChange={e => setFormData({ ...formData, nom: e.target.value })} />
             </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1">Client</label>
-            <input type="text" required className="w-full bg-[#0F172A] border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-btp-blue outline-none" value={formData.client_nom} onChange={e => setFormData({...formData, client_nom: e.target.value})} />
+            <input type="text" required className="w-full bg-[#0F172A] border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-btp-blue outline-none" value={formData.client_nom} onChange={e => setFormData({ ...formData, client_nom: e.target.value })} />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1">Adresse</label>
-            <input type="text" className="w-full bg-[#0F172A] border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-btp-blue outline-none" value={formData.adresse} onChange={e => setFormData({...formData, adresse: e.target.value})} />
+            <input type="text" className="w-full bg-[#0F172A] border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-btp-blue outline-none" value={formData.adresse} onChange={e => setFormData({ ...formData, adresse: e.target.value })} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">Date de début</label>
-              <input type="date" className="w-full bg-[#0F172A] border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-btp-blue outline-none" value={formData.date_debut} onChange={e => setFormData({...formData, date_debut: e.target.value})} />
+              <input type="date" className="w-full bg-[#0F172A] border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-btp-blue outline-none" value={formData.date_debut} onChange={e => setFormData({ ...formData, date_debut: e.target.value })} />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">Date de fin prévue</label>
-              <input type="date" className="w-full bg-[#0F172A] border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-btp-blue outline-none" value={formData.date_fin_prevue} onChange={e => setFormData({...formData, date_fin_prevue: e.target.value})} />
+              <input type="date" className="w-full bg-[#0F172A] border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-btp-blue outline-none" value={formData.date_fin_prevue} onChange={e => setFormData({ ...formData, date_fin_prevue: e.target.value })} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">Budget Prévisionnel (MAD)</label>
-              <input type="number" required className="w-full bg-[#0F172A] border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-btp-blue outline-none" value={formData.budget_previsionnel} onChange={e => setFormData({...formData, budget_previsionnel: e.target.value})} />
+              <input type="number" required className="w-full bg-[#0F172A] border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-btp-blue outline-none" value={formData.budget_previsionnel} onChange={e => setFormData({ ...formData, budget_previsionnel: e.target.value })} />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">Statut</label>
-              <select className="w-full bg-[#0F172A] border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-btp-blue outline-none" value={formData.statut} onChange={e => setFormData({...formData, statut: e.target.value})}>
+              <select className="w-full bg-[#0F172A] border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-btp-blue outline-none" value={formData.statut} onChange={e => setFormData({ ...formData, statut: e.target.value })}>
                 <option value="En préparation">En préparation</option>
                 <option value="En cours">En cours</option>
                 <option value="Suspendu">Suspendu</option>

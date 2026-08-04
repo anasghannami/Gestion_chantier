@@ -1,310 +1,490 @@
-import { useState, useEffect } from 'react';
-import { Calendar, Loader2, ArrowRight, User } from 'lucide-react';
-import Badge from '../components/ui/Badge';
+// ============================================================
+// Planning.jsx — Page principale Planning des Chantiers
+// Intègre les 3 vues (Gantt, Liste, Calendrier), le drawer
+// latéral, les filtres, et les KPI récapitulatifs en haut.
+// ============================================================
+
+import { useState, useEffect, useMemo } from 'react';
+import {
+  Calendar as CalendarIcon, Plus, ChevronLeft, ChevronRight,
+  Clock, AlertTriangle, Building2, Users, CheckCircle2,
+  FileSpreadsheet, Download, Filter, Search, BarChart3,
+  List, CalendarDays, GanttChart, LayoutGrid
+} from 'lucide-react';
+import KpiCard from '../components/ui/KpiCard';
+import GanttView from '../components/planning/GanttView';
+import CalendarView from '../components/planning/CalendarView';
+import ListView from '../components/planning/ListView';
+import TaskDrawer from '../components/planning/TaskDrawer';
+import TaskModal from '../components/planning/TaskModal';
+import {
+  MOCK_CHANTIERS, MOCK_OUVRIERS, MOCK_TACHES, SIMULATED_TODAY
+} from '../data/planningData';
+import { exportToExcel, exportToPDF } from '../utils/exportUtils';
 import api from '../api/axios';
 
+// ─── Vues disponibles ────────────────────────────────────────
+const VIEW_OPTIONS = [
+  { key: 'Liste', icon: List, label: 'Liste' },
+  { key: 'Gantt', icon: BarChart3, label: 'Gantt' },
+  { key: 'Calendrier', icon: CalendarDays, label: 'Calendrier' },
+];
+
+const LOCAL_STORAGE_KEY = 'btp_planning_taches';
+
 export default function Planning() {
-  const [chantiers, setChantiers] = useState([]);
-  const [chefs, setChefs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // ── State principal avec persistance LocalStorage ──
+  const [chantiers, setChantiers] = useState(MOCK_CHANTIERS);
+  const [ouvriers, setOuvriers] = useState(MOCK_OUVRIERS);
 
-  // Filters
-  const [filterStatut, setFilterStatut] = useState('');
-  const [filterChef, setFilterChef] = useState('');
+  const [taches, setTaches] = useState(() => {
+    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    return MOCK_TACHES;
+  });
 
-  // Timeline Date Boundaries (Current year: Jan 1st to Dec 31st)
-  const currentYear = new Date().getFullYear();
-  const timelineStart = new Date(currentYear, 0, 1);
-  const timelineEnd = new Date(currentYear, 11, 31);
-  const timelineDuration = timelineEnd - timelineStart;
+  const [loading, setLoading] = useState(false);
 
-  // Month labels for the calendar header
-  const months = [
-    'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-    'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
-  ];
+  // ── Vue active (Gantt par défaut) ──
+  const [viewMode, setViewMode] = useState('Gantt');
 
+  // ── Filtres ──
+  const [selectedChantierId, setSelectedChantierId] = useState('');
+  const [selectedStatut, setSelectedStatut] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+
+  // ── Drawer / Modal ──
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [activeTask, setActiveTask] = useState(null);
+  const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
+  const [prefilledDate, setPrefilledDate] = useState(null);
+
+  // ── Synchroniser avec localStorage ──
+  const updateTachesState = (newTaches) => {
+    setTaches(newTaches);
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newTaches));
+  };
+
+  // ── Fetch API (fallback mock + localStorage) ──
   useEffect(() => {
-    fetchData();
-  }, [filterStatut, filterChef]);
+    fetchInitialData();
+  }, []);
 
-  const formatMAD = (val) => new Intl.NumberFormat('fr-MA', { style: 'currency', currency: 'MAD', maximumFractionDigits: 0 }).format(val || 0);
-
-  const fetchData = async () => {
+  const fetchInitialData = async () => {
     try {
       setLoading(true);
-      const params = {};
-      if (filterStatut) params.statut = filterStatut;
-      if (filterChef) params.chef_chantier_id = filterChef;
+      const [chantiersRes, ouvriersRes, tachesRes] = await Promise.all([
+        api.get('/chantiers').catch(() => ({ data: null })),
+        api.get('/ouvriers').catch(() => ({ data: null })),
+        api.get('/taches').catch(() => ({ data: null })),
+      ]);
 
-      const chantiersRes = await api.get('/chantiers', { params });
-
-      // Fetch all chantiers to extract unique chefs
-      const allChantiers = chantiersRes.data;
-      setChantiers(allChantiers);
-
-      // Extract unique chef list
-      const uniqueChefs = [];
-      const chefIds = new Set();
-      allChantiers.forEach(c => {
-        if (c.chef_chantier && !chefIds.has(c.chef_chantier.id)) {
-          chefIds.add(c.chef_chantier.id);
-          uniqueChefs.push(c.chef_chantier);
-        }
-      });
-      setChefs(uniqueChefs);
-    } catch (e) {
-      console.error("Erreur chargement planning:", e);
+      if (chantiersRes.data && chantiersRes.data.length > 0) setChantiers(chantiersRes.data);
+      if (ouvriersRes.data && ouvriersRes.data.length > 0) setOuvriers(ouvriersRes.data);
+      if (tachesRes.data && tachesRes.data.length > 0) {
+        const mapped = tachesRes.data.map(t => ({
+          ...t,
+          duree: t.duree || 1,
+          avancement: t.avancement !== undefined ? t.avancement : t.pourcentage_avancement || 0,
+          priorite: t.priorite || 'Moyenne',
+          ouvriers_ids: t.ouvriers_ids || [],
+          dependances_ids: t.dependances_ids || [],
+          is_milestone: t.is_milestone || false,
+          is_critical: t.is_critical || false,
+          historique: t.historique || [],
+        }));
+        updateTachesState(mapped);
+      }
+    } catch (err) {
+      console.log('Utilisation des données de stockage local / mockées.', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const getPositionStyles = (dateDebutStr, dateFinStr) => {
-    if (!dateDebutStr) return { left: '0%', width: '0%' };
-    
-    const start = new Date(dateDebutStr);
-    const end = dateFinStr ? new Date(dateFinStr) : new Date(start.getTime() + 30 * 24 * 60 * 60 * 1000); // Default to 30 days if no end date
-    
-    // Clamp values inside current year
-    const startClamped = Math.max(timelineStart, start);
-    const endClamped = Math.min(timelineEnd, end);
-    
-    if (startClamped > timelineEnd || endClamped < timelineStart) {
-      return { left: '0%', width: '0%', hidden: true };
-    }
+  // ── Filtrage des tâches ──
+  const filteredTaches = useMemo(() => {
+    return taches.filter(t => {
+      if (selectedChantierId && String(t.chantier_id) !== String(selectedChantierId)) return false;
+      if (selectedStatut && t.statut !== selectedStatut) return false;
+      if (dateFrom && t.date_debut < dateFrom) return false;
+      if (dateTo && t.date_fin > dateTo) return false;
+      return true;
+    });
+  }, [taches, selectedChantierId, selectedStatut, dateFrom, dateTo]);
 
-    const leftPercent = ((startClamped - timelineStart) / timelineDuration) * 100;
-    const widthPercent = ((endClamped - startClamped) / timelineDuration) * 100;
-
-    return {
-      left: `${Math.max(0, leftPercent)}%`,
-      width: `${Math.max(2, widthPercent)}%`
-    };
+  // ── Handlers ──
+  const handleTaskClick = (task) => {
+    setActiveTask(task);
+    setIsNewTaskModalOpen(true);
   };
 
-  const getTodayMarkerOffset = () => {
-    const today = new Date();
-    if (today < timelineStart || today > timelineEnd) return null;
-    return `${((today - timelineStart) / timelineDuration) * 100}%`;
+  const handleDayClick = (dateStr) => {
+    setPrefilledDate(dateStr);
+    setIsNewTaskModalOpen(true);
   };
 
-  const todayOffset = getTodayMarkerOffset();
-
-  const getStatusColorClass = (statut) => {
-    switch (statut) {
-      case 'En préparation': return 'bg-amber-500';
-      case 'En cours': return 'bg-sky-500';
-      case 'En retard': return 'bg-red-500';
-      case 'Terminé': return 'bg-emerald-500';
-      case 'Suspendu': return 'bg-slate-400';
-      default: return 'bg-sky-500';
+  const handleSaveTask = async (savedTask) => {
+    const updated = taches.map(t => t.id === savedTask.id ? savedTask : t);
+    updateTachesState(updated);
+    try {
+      await api.put(`/taches/${savedTask.id}`, savedTask);
+    } catch (e) {
+      console.warn('Erreur mise à jour API:', e);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <Loader2 className="h-10 w-10 text-btp-blue animate-spin" />
-      </div>
-    );
-  }
+  const handleNewTask = async (savedTask) => {
+    const updated = [savedTask, ...taches];
+    updateTachesState(updated);
+
+    try {
+      const res = await api.post('/taches', savedTask);
+      if (res.data && res.data.id) {
+        const dbTask = {
+          ...savedTask,
+          ...res.data,
+          avancement: res.data.avancement !== undefined ? res.data.avancement : savedTask.avancement,
+        };
+        updateTachesState([dbTask, ...taches.filter(t => t.id !== savedTask.id)]);
+      }
+    } catch (e) {
+      console.warn('Erreur création API:', e);
+    }
+  };
+
+  const handleDeleteTask = async (taskId) => {
+    const updated = taches.filter(t => t.id !== taskId);
+    updateTachesState(updated);
+    try {
+      await api.delete(`/taches/${taskId}`);
+    } catch (e) {
+      console.warn('Erreur suppression API:', e);
+    }
+  };
+
+  // ── KPI ──
+  const kpi = useMemo(() => {
+    const total = filteredTaches.length;
+    const enRetard = filteredTaches.filter(t => t.statut === 'En retard').length;
+    const terminees = filteredTaches.filter(t => t.statut === 'Terminé' || t.statut === 'Terminée').length;
+    const enCours = filteredTaches.filter(t => t.statut === 'En cours').length;
+    const avgAvancement = total > 0
+      ? Math.round(filteredTaches.reduce((acc, t) => acc + (t.avancement || t.pourcentage_avancement || 0), 0) / total)
+      : 0;
+
+    return { total, enRetard, terminees, enCours, avgAvancement };
+  }, [filteredTaches]);
+
+  // ── Export ──
+  const handleExportExcel = () => {
+    const columns = [
+      { header: 'Tâche', accessor: 'nom' },
+      { header: 'Chantier', renderText: (row) => chantiers.find(c => String(c.id) === String(row.chantier_id))?.nom || '—' },
+      { header: 'Statut', accessor: 'statut' },
+      { header: 'Date Début', accessor: 'date_debut' },
+      { header: 'Date Fin', accessor: 'date_fin' },
+      { header: 'Durée (j)', accessor: 'duree' },
+      { header: 'Avancement (%)', accessor: 'avancement' },
+    ];
+    exportToExcel(columns, filteredTaches, 'Planning_Taches_BTP');
+  };
+
+  const handleExportPDF = () => {
+    const data = filteredTaches.map(t => ({
+      Tache: t.nom,
+      Chantier: chantiers.find(c => String(c.id) === String(t.chantier_id))?.nom || '—',
+      Statut: t.statut,
+      Debut: t.date_debut || '—',
+      Fin: t.date_fin || '—',
+      Avancement: `${t.avancement || 0}%`,
+    }));
+    exportToPDF({
+      title: 'Planning des Chantiers — BTP Manager',
+      subtitle: `${filteredTaches.length} tâches planifiées`,
+      columns: [
+        { header: 'Tâche', accessor: 'Tache' },
+        { header: 'Chantier', accessor: 'Chantier' },
+        { header: 'Statut', accessor: 'Statut' },
+        { header: 'Début', accessor: 'Debut' },
+        { header: 'Fin', accessor: 'Fin' },
+        { header: 'Avancement', accessor: 'Avancement' },
+      ],
+      data,
+      filename: 'Planning_Taches_BTP',
+    });
+  };
+
+  const resetFilters = () => {
+    setSelectedChantierId('');
+    setSelectedStatut('');
+    setDateFrom('');
+    setDateTo('');
+  };
+
+  const hasActiveFilters = selectedChantierId || selectedStatut || dateFrom || dateTo;
 
   return (
     <div className="space-y-6">
+      {/* ═══════════════════════════════════════════
+          1. EN-TÊTE DE PAGE
+          ═══════════════════════════════════════════ */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center space-x-3">
-          <Calendar className="h-6 w-6 text-btp-blue" />
-          <h1 className="text-2xl font-bold text-white">Planning Chronologique ({currentYear})</h1>
+        <div>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+            Planning des Chantiers
+          </h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-tertiary)' }}>
+            Gestion et suivi des plannings de vos chantiers en cours
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Bouton Exporter */}
+          <button
+            onClick={handleExportPDF}
+            className="flex items-center px-3.5 py-2 bg-white hover:bg-slate-50 rounded-lg transition-all duration-200 font-semibold text-xs shadow-sm border whitespace-nowrap"
+            style={{
+              borderColor: 'var(--border-primary)',
+              color: 'var(--text-secondary)',
+              backgroundColor: 'var(--bg-secondary)',
+            }}
+            title="Exporter le planning"
+          >
+            <Download className="h-4 w-4 mr-1.5" /> Exporter
+          </button>
+
+          {/* Bouton Nouveau Planning */}
+          <button
+            onClick={() => { setActiveTask(null); setPrefilledDate(null); setIsNewTaskModalOpen(true); }}
+            className="flex items-center px-4 py-2 bg-[#0284C7] hover:bg-[#0369A1] text-white rounded-lg transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow active:scale-95 whitespace-nowrap"
+          >
+            <Plus className="h-4 w-4 mr-1.5" />
+            Nouveau Planning
+          </button>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <select 
-          className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:border-btp-blue outline-none"
-          value={filterStatut}
-          onChange={e => setFilterStatut(e.target.value)}
-        >
-          <option value="">Tous les statuts</option>
-          <option value="En préparation">En préparation</option>
-          <option value="En cours">En cours</option>
-          <option value="En retard">En retard</option>
-          <option value="Terminé">Terminé</option>
-          <option value="Suspendu">Suspendu</option>
-        </select>
-        
-        <select 
-          className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:border-btp-blue outline-none"
-          value={filterChef}
-          onChange={e => setFilterChef(e.target.value)}
-        >
-          <option value="">Tous les chefs de chantier</option>
-          {chefs.map(chef => (
-            <option key={chef.id} value={chef.id}>
-              {chef.prenom} {chef.nom}
-            </option>
-          ))}
-        </select>
+      {/* ═══════════════════════════════════════════
+          2. SECTION KPI RÉCAPITULATIVE (EN HAUT)
+          ═══════════════════════════════════════════ */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCard
+          title="Total Tâches"
+          value={kpi.total.toString()}
+          icon={CalendarIcon}
+          color="blue"
+          subtitle={`${kpi.enCours} en cours`}
+        />
+        <KpiCard
+          title="Tâches en Retard"
+          value={kpi.enRetard.toString()}
+          icon={AlertTriangle}
+          color="red"
+          subtitle="Attention requise"
+        />
+        <KpiCard
+          title="Tâches Terminées"
+          value={kpi.terminees.toString()}
+          icon={CheckCircle2}
+          color="green"
+          subtitle={`${kpi.total > 0 ? Math.round((kpi.terminees / kpi.total) * 100) : 0}% du total`}
+        />
+        <KpiCard
+          title="Avancement Moyen"
+          value={`${kpi.avgAvancement}%`}
+          icon={BarChart3}
+          color="amber"
+          subtitle="Toutes tâches confondues"
+        />
       </div>
 
-      {/* Gantt Timeline View */}
-      <div className="glass-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <div className="min-w-[900px] relative pb-6">
-            
-            {/* Today vertical line */}
-            {todayOffset && (
-              <div 
-                className="absolute top-12 bottom-0 w-[2px] z-20 pointer-events-none border-l-2 border-dashed border-red-500"
-                style={{ left: todayOffset }}
-                title="Aujourd'hui"
-              >
-                <span className="absolute -top-3 -translate-x-1/2 px-2 py-0.5 text-[9px] font-extrabold rounded-full bg-red-600 text-white shadow-lg border border-red-400 whitespace-nowrap flex items-center gap-1">
-                  <span className="h-1.5 w-1.5 rounded-full bg-white animate-ping"></span>
-                  Aujourd'hui
-                </span>
-              </div>
-            )}
+      {/* ═══════════════════════════════════════════
+          3. SECTION FILTRES & VUE
+          ═══════════════════════════════════════════ */}
+      <div className="glass-card p-4 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4">
+        {/* Filtres gauche */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Chantier */}
+          <select
+            value={selectedChantierId}
+            onChange={e => setSelectedChantierId(e.target.value)}
+            className="rounded-xl px-3 py-2 text-xs font-medium outline-none border"
+            style={{
+              backgroundColor: 'var(--bg-input)',
+              borderColor: 'var(--border-primary)',
+              color: 'var(--text-primary)',
+            }}
+          >
+            <option value="">Tous les chantiers</option>
+            {chantiers.map(c => (
+              <option key={c.id} value={c.id}>{c.nom}</option>
+            ))}
+          </select>
 
-            {/* Calendar Month Header */}
-            <div className="flex border-b border-slate-700/80 bg-slate-800/30">
-              <div className="w-1/4 min-w-[220px] p-4 font-semibold border-r border-slate-700/80 text-white">
-                Chantier
-              </div>
-              <div className="w-3/4 flex relative">
-                {months.map((month, idx) => (
-                  <div 
-                    key={idx} 
-                    className="flex-1 text-center py-4 text-xs font-semibold border-r border-slate-700/50 last:border-r-0 text-slate-300"
-                  >
-                    {month}
-                  </div>
-                ))}
-              </div>
-            </div>
+          {/* Statut */}
+          <select
+            value={selectedStatut}
+            onChange={e => setSelectedStatut(e.target.value)}
+            className="rounded-xl px-3 py-2 text-xs font-medium outline-none border"
+            style={{
+              backgroundColor: 'var(--bg-input)',
+              borderColor: 'var(--border-primary)',
+              color: 'var(--text-primary)',
+            }}
+          >
+            <option value="">Tous les statuts</option>
+            <option value="En cours">En cours</option>
+            <option value="À faire">Planifié</option>
+            <option value="Terminé">Terminé</option>
+            <option value="En retard">En retard</option>
+          </select>
 
-            {/* Gantt Rows */}
-            <div className="divide-y divide-slate-800">
-              {chantiers.length === 0 ? (
-                <div className="p-8 text-center text-slate-400">
-                  Aucun chantier ne correspond aux filtres appliqués.
-                </div>
-              ) : (
-                chantiers.map(c => {
-                  const pos = getPositionStyles(c.date_debut, c.date_fin_prevue);
-                  if (pos.hidden) return null;
-
-                  const budgetConsomme = parseFloat(c.budget_consomme) || 0;
-                  const budgetPrev = parseFloat(c.budget_previsionnel) || 0;
-                  const progression = budgetPrev > 0 ? Math.min(Math.round((budgetConsomme / budgetPrev) * 100), 100) : 0;
-                  const chefNom = c.chef_chantier ? `${c.chef_chantier.prenom} ${c.chef_chantier.nom}` : 'Non assigné';
-
-                  const barColor = getStatusColorClass(c.statut);
-
-                  return (
-                    <div key={c.id} className="flex hover:bg-slate-800/10 transition-colors">
-                      {/* Left Item Description */}
-                      <div className="w-1/4 min-w-[220px] p-4 border-r border-slate-700/80 flex flex-col justify-center">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-xs font-semibold text-btp-blue">{c.code_chantier}</span>
-                          <Badge status={c.statut} />
-                        </div>
-                        <span className="font-bold text-white text-sm truncate mt-1" title={c.nom}>{c.nom}</span>
-                        <div className="flex items-center mt-1 text-xs text-slate-400">
-                          <User className="h-3 w-3 mr-1" />
-                          <span className="truncate">{chefNom}</span>
-                        </div>
-                      </div>
-
-                      {/* Right Timeline Bar */}
-                      <div className="w-3/4 relative flex items-center py-6 px-1">
-                        {/* Light background grid lines for months */}
-                        <div className="absolute inset-0 flex pointer-events-none">
-                          {months.map((_, i) => (
-                            <div key={i} className="flex-1 border-r border-slate-800/30 last:border-r-0 h-full"></div>
-                          ))}
-                        </div>
-
-                        {/* Gantt Bar Element */}
-                        <div 
-                          className="absolute h-8 rounded-lg shadow-lg relative group cursor-pointer transition-all duration-300 hover:scale-[1.02]"
-                          style={{ left: pos.left, width: pos.width }}
-                        >
-                          {/* Inner bar */}
-                          <div className={`absolute inset-0 rounded-lg opacity-85 ${barColor}`}></div>
-                          
-                          {/* Progress indicators */}
-                          <div 
-                            className="absolute bottom-0 left-0 h-1.5 bg-white/40 rounded-bl-lg" 
-                            style={{ width: `${progression}%`, borderBottomLeftRadius: '0.5rem' }}
-                          ></div>
-
-                          {/* Professional Hover Tooltip Card */}
-                          <div 
-                            className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 hidden group-hover:block z-50 w-72 p-4 rounded-xl shadow-2xl text-xs space-y-2 border transition-all"
-                            style={{ 
-                              backgroundColor: '#0F172A', 
-                              borderColor: '#334155',
-                              color: '#F8FAFC',
-                              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5)'
-                            }}
-                          >
-                            <div className="flex items-center justify-between border-b border-slate-700/80 pb-2 mb-1">
-                              <p className="font-bold text-sm truncate max-w-[180px]" style={{ color: '#FFFFFF' }}>{c.nom}</p>
-                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-800 border border-slate-700" style={{ color: '#0284C7' }}>
-                                {c.code_chantier}
-                              </span>
-                            </div>
-                            <div className="space-y-1.5 text-xs">
-                              <div className="flex justify-between">
-                                <span style={{ color: '#94A3B8' }}>Début :</span>
-                                <span className="font-semibold" style={{ color: '#FFFFFF' }}>
-                                  {c.date_debut ? new Date(c.date_debut).toLocaleDateString('fr-FR') : '—'}
-                                </span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span style={{ color: '#94A3B8' }}>Fin prévue :</span>
-                                <span className="font-semibold" style={{ color: '#FFFFFF' }}>
-                                  {c.date_fin_prevue ? new Date(c.date_fin_prevue).toLocaleDateString('fr-FR') : '—'}
-                                </span>
-                              </div>
-                              {c.date_fin_reelle && (
-                                <div className="flex justify-between">
-                                  <span style={{ color: '#94A3B8' }}>Fin réelle :</span>
-                                  <span className="font-semibold" style={{ color: '#10B981' }}>
-                                    {new Date(c.date_fin_reelle).toLocaleDateString('fr-FR')}
-                                  </span>
-                                </div>
-                              )}
-                              <div className="flex justify-between border-t border-slate-700/80 pt-2">
-                                <span style={{ color: '#94A3B8' }}>Budget Consommé :</span>
-                                <span className="font-bold" style={{ color: '#38BDF8' }}>{progression}% ({formatMAD(budgetConsomme)})</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span style={{ color: '#94A3B8' }}>Chef de Chantier :</span>
-                                <span className="font-medium truncate max-w-[130px]" style={{ color: '#FFFFFF' }}>{chefNom}</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Text labels inside the bar if wide enough */}
-                          {parseFloat(pos.width) > 12 && (
-                            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white px-2 truncate pointer-events-none">
-                              {c.code_chantier} | {progression}% budget
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-            
+          {/* Date Du */}
+          <div className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+            <span className="font-medium">Du</span>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={e => setDateFrom(e.target.value)}
+              className="rounded-xl px-2.5 py-2 text-xs font-medium outline-none border"
+              style={{
+                backgroundColor: 'var(--bg-input)',
+                borderColor: 'var(--border-primary)',
+                color: 'var(--text-primary)',
+              }}
+            />
           </div>
+
+          {/* Date Au */}
+          <div className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+            <span className="font-medium">Au</span>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={e => setDateTo(e.target.value)}
+              className="rounded-xl px-2.5 py-2 text-xs font-medium outline-none border"
+              style={{
+                backgroundColor: 'var(--bg-input)',
+                borderColor: 'var(--border-primary)',
+                color: 'var(--text-primary)',
+              }}
+            />
+          </div>
+
+          {/* Bouton Appliquer / Reset */}
+          {hasActiveFilters && (
+            <button
+              onClick={resetFilters}
+              className="px-3 py-2 rounded-xl text-xs font-semibold transition-colors"
+              style={{
+                backgroundColor: 'rgba(2, 132, 199, 0.1)',
+                color: '#0284C7',
+              }}
+            >
+              Réinitialiser
+            </button>
+          )}
+        </div>
+
+        {/* Toggle vue (pill buttons) */}
+        <div
+          className="flex p-1 rounded-xl border self-start lg:self-auto"
+          style={{
+            backgroundColor: 'var(--bg-hover)',
+            borderColor: 'var(--border-secondary)',
+          }}
+        >
+          {VIEW_OPTIONS.map(view => {
+            const Icon = view.icon;
+            const isActive = viewMode === view.key;
+            return (
+              <button
+                key={view.key}
+                onClick={() => setViewMode(view.key)}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  isActive
+                    ? 'bg-[#0284C7] text-white shadow-sm'
+                    : 'hover:bg-[#0284C7]/10'
+                }`}
+                style={!isActive ? { color: 'var(--text-tertiary)' } : {}}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {view.label}
+              </button>
+            );
+          })}
         </div>
       </div>
+
+      {/* ═══════════════════════════════════════════
+          4. VUE PRINCIPALE
+          ═══════════════════════════════════════════ */}
+      {viewMode === 'Gantt' && (
+        <GanttView
+          taches={filteredTaches}
+          chantiers={chantiers}
+          ouvriers={ouvriers}
+          onTaskClick={handleTaskClick}
+          todayStr={SIMULATED_TODAY}
+        />
+      )}
+
+      {viewMode === 'Liste' && (
+        <ListView
+          taches={filteredTaches}
+          chantiers={chantiers}
+          ouvriers={ouvriers}
+          onTaskClick={handleTaskClick}
+          onDeleteTask={handleDeleteTask}
+        />
+      )}
+
+      {viewMode === 'Calendrier' && (
+        <CalendarView
+          taches={filteredTaches}
+          chantiers={chantiers}
+          ouvriers={ouvriers}
+          onTaskClick={handleTaskClick}
+          onDayClick={handleDayClick}
+          todayStr={SIMULATED_TODAY}
+        />
+      )}
+
+      {/* ═══════════════════════════════════════════
+          5. DRAWER LATÉRAL DÉTAILS TÂCHE
+          ═══════════════════════════════════════════ */}
+      <TaskDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => { setIsDrawerOpen(false); setActiveTask(null); }}
+        task={activeTask}
+        chantiers={chantiers}
+        ouvriers={ouvriers}
+        allTasks={taches}
+        onSave={handleSaveTask}
+        onDelete={handleDeleteTask}
+      />
+
+      {/* ═══════════════════════════════════════════
+          6. MODAL CRÉATION / ÉDITION TÂCHE
+          ═══════════════════════════════════════════ */}
+      <TaskModal
+        isOpen={isNewTaskModalOpen}
+        onClose={() => { setIsNewTaskModalOpen(false); setActiveTask(null); }}
+        task={activeTask}
+        prefilledDate={prefilledDate}
+        chantiers={chantiers}
+        ouvriers={ouvriers}
+        allTasks={taches}
+        onSave={activeTask ? handleSaveTask : handleNewTask}
+        onDelete={handleDeleteTask}
+      />
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { ArrowLeft, Building2, MapPin, Calendar, Users, Loader2, Edit, Trash2 } from 'lucide-react';
+import { ArrowLeft, Building2, MapPin, Calendar, Users, Loader2, Edit, Trash2, Download, FileSpreadsheet } from 'lucide-react';
+import DocumentManager from '../components/ui/DocumentManager';
+import { exportToExcel, exportToPDF } from '../utils/exportUtils';
 import Badge from '../components/ui/Badge';
 import DataTable from '../components/ui/DataTable';
 import Modal from '../components/ui/Modal';
@@ -14,21 +16,72 @@ export default function ChantierDetail() {
   const { user } = useAuth();
   const [chantier, setChantier] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
-  
+  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('commandes'); // 'commandes' | 'factures' | 'ouvriers' | 'documents'
+
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [editFormData, setEditFormData] = useState({
-    nom: '',
-    client_nom: '',
-    adresse: '',
-    date_debut: '',
-    date_fin_prevue: '',
-    date_fin_reelle: '',
-    budget_previsionnel: '',
-    statut: ''
-  });
+  const [editFormData, setEditFormData] = useState({});
+
+  useEffect(() => {
+    fetchChantierDetail();
+  }, [id]);
+
+  const fetchChantierDetail = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get(`/chantiers/${id}`);
+      setChantier(res.data);
+    } catch (err) {
+      console.error("Erreur chargement détail chantier:", err);
+      setError("Impossible de charger les informations du chantier.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExportExcel = () => {
+    if (!chantier) return;
+    const exportData = [
+      { Champ: 'Code Chantier', Valeur: chantier.code_chantier },
+      { Champ: 'Nom Chantier', Valeur: chantier.nom },
+      { Champ: 'Client', Valeur: chantier.client_nom || '' },
+      { Champ: 'Adresse', Valeur: chantier.adresse || '' },
+      { Champ: 'Statut', Valeur: chantier.statut },
+      { Champ: 'Budget Prévisionnel', Valeur: `${chantier.budget_previsionnel || 0} MAD` },
+      { Champ: 'Nombre de Commandes', Valeur: chantier.commandes?.length || 0 },
+      { Champ: 'Nombre de Factures', Valeur: chantier.factures?.length || 0 },
+      { Champ: 'Nombre d\'Ouvriers', Valeur: chantier.ouvriers?.length || 0 }
+    ];
+    exportToExcel(
+      [{ header: 'Propriété / Indicateur', accessor: 'Champ' }, { header: 'Valeur', accessor: 'Valeur' }],
+      exportData,
+      `Bilan_Chantier_${chantier.code_chantier}`
+    );
+  };
+
+  const handleExportPDF = () => {
+    if (!chantier) return;
+    const exportData = [
+      { Champ: 'Code Chantier', Valeur: chantier.code_chantier },
+      { Champ: 'Nom Chantier', Valeur: chantier.nom },
+      { Champ: 'Client', Valeur: chantier.client_nom || 'Non spécifié' },
+      { Champ: 'Chef de Chantier', Valeur: chantier.chef_chantier ? `${chantier.chef_chantier.prenom} ${chantier.chef_chantier.nom}` : 'Non attribué' },
+      { Champ: 'Statut', Valeur: chantier.statut },
+      { Champ: 'Budget Prévisionnel', Valeur: formatMAD(chantier.budget_previsionnel) },
+      { Champ: 'Dépenses Commandes', Valeur: formatMAD(chantier.commandes?.reduce((sum, c) => sum + parseFloat(c.montant_ttc || 0), 0)) },
+      { Champ: 'Date Début', Valeur: chantier.date_debut || '—' },
+      { Champ: 'Date Fin Prévue', Valeur: chantier.date_fin_prevue || '—' }
+    ];
+    exportToPDF({
+      title: `Bilan du Chantier ${chantier.nom} (${chantier.code_chantier})`,
+      subtitle: `Rapport synthétique financier et opérationnel`,
+      columns: [{ header: 'Propriété / Indicateur', accessor: 'Champ' }, { header: 'Valeur', accessor: 'Valeur' }],
+      data: exportData,
+      filename: `Rapport_Chantier_${chantier.code_chantier}`
+    });
+  };
 
   const canEdit = user?.role === 'Admin' || user?.role === 'Conducteur';
 
@@ -139,7 +192,10 @@ export default function ChantierDetail() {
   return (
     <div className="space-y-6">
       {/* Back button */}
-      <button onClick={() => navigate('/chantiers')} className="flex items-center text-slate-400 hover:text-white transition-colors">
+      <button 
+        onClick={() => navigate('/chantiers')} 
+        className="inline-flex items-center text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors py-1 px-2.5 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-800/60 -ml-2.5"
+      >
         <ArrowLeft className="h-4 w-4 mr-2" /> Retour aux chantiers
       </button>
 
@@ -154,27 +210,45 @@ export default function ChantierDetail() {
             <h1 className="text-2xl font-bold text-white">{chantier.nom}</h1>
             {chantier.client_nom && <p className="text-slate-400 mt-1">{chantier.client_nom}</p>}
           </div>
-          {canEdit && (
-            <div className="flex items-center space-x-3 self-start md:self-auto">
-              <button 
-                onClick={handleOpenEditModal}
-                className="flex items-center px-4 py-2 bg-btp-blue hover:bg-btp-blue-dark text-white rounded-lg transition-colors font-medium text-sm"
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Modifier
-              </button>
-              {user?.role === 'Admin' && (
+          <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
+            <button 
+              onClick={handleExportExcel}
+              className="flex items-center px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow active:scale-95 whitespace-nowrap"
+              title="Exporter le bilan du chantier sous Excel"
+            >
+              <FileSpreadsheet className="h-4 w-4 mr-1.5" /> Bilan Excel
+            </button>
+
+            <button 
+              onClick={handleExportPDF}
+              className="flex items-center px-3.5 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow active:scale-95 whitespace-nowrap"
+              title="Générer le rapport PDF du chantier"
+            >
+              <Download className="h-4 w-4 mr-1.5" /> Rapport PDF
+            </button>
+
+            {canEdit && (
+              <>
                 <button 
-                  onClick={handleDelete}
-                  disabled={submitting}
-                  className="flex items-center px-4 py-2 bg-[#DC2626] hover:bg-[#B91C1C] text-white rounded-lg transition-colors font-medium text-sm disabled:opacity-50"
+                  onClick={handleOpenEditModal}
+                  className="flex items-center px-4 py-2 bg-btp-blue hover:bg-btp-blue-dark text-white rounded-lg transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow active:scale-95 whitespace-nowrap"
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Supprimer
+                  <Edit className="h-4 w-4 mr-1.5" />
+                  Modifier
                 </button>
-              )}
-            </div>
-          )}
+                {user?.role === 'Admin' && (
+                  <button 
+                    onClick={handleDelete}
+                    disabled={submitting}
+                    className="flex items-center px-4 py-2 bg-[#DC2626] hover:bg-[#B91C1C] text-white rounded-lg transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow disabled:opacity-50 active:scale-95 whitespace-nowrap"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1.5" />
+                    Supprimer
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
         {/* Budget Stats */}
@@ -199,7 +273,7 @@ export default function ChantierDetail() {
       {/* Tabs */}
       <div className="border-b border-slate-700">
         <nav className="flex space-x-8">
-          {['overview', 'commandes', 'factures', 'ouvriers'].map(tab => (
+          {['overview', 'commandes', 'factures', 'ouvriers', 'documents'].map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -215,7 +289,9 @@ export default function ChantierDetail() {
                 ? `Commandes (${chantier.commandes?.length || 0})` 
                 : tab === 'factures' 
                 ? `Factures (${chantier.factures?.length || 0})`
-                : `Ouvriers (${chantier.ouvriers?.length || 0})`}
+                : tab === 'ouvriers'
+                ? `Ouvriers (${chantier.ouvriers?.length || 0})`
+                : `📷 Photos & Documents`}
             </button>
           ))}
         </nav>
@@ -313,6 +389,15 @@ export default function ChantierDetail() {
           data={chantier.ouvriers || []}
           searchable
           searchPlaceholder="Rechercher un ouvrier..."
+        />
+      )}
+
+      {/* GED / Photos & Documents du Chantier */}
+      {activeTab === 'documents' && (
+        <DocumentManager 
+          entityType="Chantier" 
+          entityId={chantier.id} 
+          title="Photos d'Avancement & Documents du Chantier" 
         />
       )}
 

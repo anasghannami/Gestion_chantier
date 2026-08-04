@@ -6,7 +6,7 @@ export const getAllFournisseurs = async (req, res, next) => {
   const where = {};
   
   if (search) {
-    where.raison_sociale = { [Op.like]: `%${search}%` };
+    where.raison_sociale = { [Op.iLike]: `%${search}%` };
   }
   if (categorie) {
     where.categorie = categorie;

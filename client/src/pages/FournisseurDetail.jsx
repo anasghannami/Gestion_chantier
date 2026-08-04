@@ -120,7 +120,10 @@ export default function FournisseurDetail() {
 
   return (
     <div className="space-y-6">
-      <button onClick={() => navigate('/fournisseurs')} className="flex items-center text-slate-400 hover:text-white transition-colors">
+      <button 
+        onClick={() => navigate('/fournisseurs')} 
+        className="inline-flex items-center text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors py-1 px-2.5 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-800/60 -ml-2.5"
+      >
         <ArrowLeft className="h-4 w-4 mr-2" /> Retour aux fournisseurs
       </button>
 

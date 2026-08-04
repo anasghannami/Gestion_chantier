@@ -41,6 +41,10 @@ const Chantier = sequelize.define('Chantier', {
   chef_chantier_id: {
     type: DataTypes.INTEGER,
     allowNull: true
+  },
+  devis_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true
   }
 }, {
   tableName: 'chantiers',

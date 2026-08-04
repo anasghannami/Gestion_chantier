@@ -16,6 +16,10 @@ const statusConfig = {
   'Actif': { bg: 'bg-[#16A34A]/10', text: 'text-[#16A34A]', border: 'border-[#16A34A]/20' },
   'Inactif': { bg: 'bg-slate-500/10', text: 'text-slate-400', border: 'border-slate-500/20' },
   'Bloqué': { bg: 'bg-[#DC2626]/10', text: 'text-[#DC2626]', border: 'border-[#DC2626]/20' },
+  'Envoyé': { bg: 'bg-[#D97706]/10', text: 'text-[#D97706]', border: 'border-[#D97706]/20' },
+  'Accepté': { bg: 'bg-[#16A34A]/10', text: 'text-[#16A34A]', border: 'border-[#16A34A]/20' },
+  'Refusé': { bg: 'bg-[#DC2626]/10', text: 'text-[#DC2626]', border: 'border-[#DC2626]/20' },
+  'Expiré': { bg: 'bg-slate-500/10', text: 'text-slate-400', border: 'border-slate-500/20' },
 };
 
 const defaultStyle = { bg: 'bg-slate-800', text: 'text-slate-300', border: 'border-slate-700' };

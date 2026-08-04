@@ -2,10 +2,15 @@
 node_modules/
 client/node_modules/
 server/node_modules/
+mobile/node_modules/
+mobile/.expo/
 
-# Production build
+# Production build & desktop outputs
 client/dist/
 dist/
+build/
+dist-desktop/
+server/uploads/
 
 # Environment variables (données sensibles)
 .env

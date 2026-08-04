@@ -6,6 +6,7 @@ const typeColors = {
   green: 'from-[#16A34A]/20 to-transparent border-[#16A34A]/30 text-[#16A34A]',
   red: 'from-[#DC2626]/20 to-transparent border-[#DC2626]/30 text-[#DC2626]',
   amber: 'from-[#D97706]/20 to-transparent border-[#D97706]/30 text-[#D97706]',
+  purple: 'from-[#8B5CF6]/20 to-transparent border-[#8B5CF6]/30 text-[#8B5CF6]',
 };
 
 const iconColors = {
@@ -14,6 +15,7 @@ const iconColors = {
   green: 'bg-[#16A34A]/20 text-[#16A34A]',
   red: 'bg-[#DC2626]/20 text-[#DC2626]',
   amber: 'bg-[#D97706]/20 text-[#D97706]',
+  purple: 'bg-[#8B5CF6]/20 text-[#8B5CF6]',
 };
 
 export default function KpiCard({ title, value, subtitle, icon: Icon, trend, trendLabel, color = 'blue' }) {

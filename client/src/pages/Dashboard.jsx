@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Building2, TrendingDown, ShoppingCart, FileText, Loader2, AlertTriangle } from 'lucide-react';
+import { 
+  Building2, TrendingDown, ShoppingCart, FileText, Loader2, 
+  AlertTriangle, CheckCircle2, Boxes, Users, TrendingUp, DollarSign
+} from 'lucide-react';
 import KpiCard from '../components/ui/KpiCard';
 import AlertCard from '../components/ui/AlertCard';
 import BudgetChart from '../components/charts/BudgetChart';
 import AvancementChart from '../components/charts/AvancementChart';
+import BilanChart from '../components/charts/BilanChart';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
+
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -22,10 +27,10 @@ export default function Dashboard() {
 
         // Formater le budget en format lisible
         const formatBudget = (amount) => {
-          if (!amount) return '0 MAD';
-          if (amount >= 1000000) return `${(amount / 1000000).toFixed(1)}M MAD`;
-          if (amount >= 1000) return `${(amount / 1000).toFixed(0)}K MAD`;
-          return `${amount} MAD`;
+          if (amount === undefined || amount === null) return '0 MAD';
+          if (Math.abs(amount) >= 1000000) return `${(amount / 1000000).toFixed(1)}M MAD`;
+          if (Math.abs(amount) >= 1000) return `${(amount / 1000).toFixed(0)}K MAD`;
+          return `${amount.toLocaleString('fr-FR')} MAD`;
         };
 
         setData({
@@ -33,7 +38,21 @@ export default function Dashboard() {
             chantiersActifs: kpiData.chantiersActifs || 0,
             budgetConsomme: formatBudget(kpiData.budgetConsomme),
             commandesEnCours: kpiData.commandesEnCours || 0,
-            facturesAttente: kpiData.facturesEnAttente || 0
+            facturesAttente: kpiData.facturesEnAttente || 0,
+            // Nouveaux KPI centralisés
+            tauxAcceptationDevis: `${kpiData.tauxAcceptationDevis ?? 0}%`,
+            devisAcceptesInfo: `${kpiData.devisAcceptes || 0} devis accepté(s) sur ${kpiData.totalDevis || 0}`,
+            articlesEnAlerte: kpiData.articlesEnAlerte || 0,
+            articlesRuptureInfo: kpiData.articlesEnRupture > 0 ? `${kpiData.articlesEnRupture} en rupture` : 'Stock suffisant',
+            ouvriersActifs: kpiData.ouvriersActifs || 0,
+            masseSalarialeJour: formatBudget(kpiData.masseSalarialeJour)
+          },
+          bilanMensuel: kpiData.bilanMensuel || [],
+          currentMonthBilan: {
+            ca: formatBudget(kpiData.currentMonthBilan?.chiffre_affaires),
+            couts: formatBudget(kpiData.currentMonthBilan?.depenses_totales),
+            marge: formatBudget(kpiData.currentMonthBilan?.benefice_net),
+            rawMarge: kpiData.currentMonthBilan?.benefice_net || 0
           },
           budgetData: (kpiData.avancementParChantier || []).map(c => ({
             nom: c.nom,
@@ -46,7 +65,7 @@ export default function Dashboard() {
           })),
           alertes: (kpiData.alertes || []).map((a, index) => ({
             id: index + 1,
-            type: a.severity === 'critical' ? 'danger' : a.severity === 'high' ? 'warning' : 'info',
+            type: a.severity === 'critical' ? 'danger' : a.severity === 'high' || a.severity === 'warning' ? 'warning' : 'info',
             title: a.type,
             message: a.message
           })),
@@ -100,12 +119,13 @@ export default function Dashboard() {
           Bienvenue, {user?.prenom || user?.nom || 'Utilisateur'} 👋
         </h1>
         <p className="text-slate-400 mt-1">
-          Vue d'ensemble de vos chantiers et activités
+          Vue d'ensemble de vos chantiers et bilan financier global
         </p>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+      {/* All KPI Cards (Single Row) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <KpiCard 
           title="Chantiers Actifs" 
           value={data.kpi.chantiersActifs} 
@@ -128,15 +148,63 @@ export default function Dashboard() {
           subtitle="Brouillons et validées"
         />
         <KpiCard 
-          title="Factures en Attente" 
-          value={data.kpi.facturesAttente} 
-          icon={FileText} 
-          color="red" 
-          subtitle={`${data.stats.facturesEchues} échues (${data.stats.montantFacturesEchues})`}
+          title="Alertes Stock Matériaux" 
+          value={data.kpi.articlesEnAlerte} 
+          icon={Boxes} 
+          color="amber" 
+          subtitle={data.kpi.articlesRuptureInfo}
+        />
+        <KpiCard 
+          title="Ouvriers Actifs" 
+          value={data.kpi.ouvriersActifs} 
+          icon={Users} 
+          color="blue" 
+          subtitle={`Masse salariale: ${data.kpi.masseSalarialeJour}/j`}
         />
       </div>
 
-      {/* Charts Row */}
+
+
+      {/* Bilan Financier Mensuel Section */}
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="glass-card p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-slate-400">CA Ce Mois</p>
+              <p className="text-xl font-bold text-emerald-400 mt-1">{data.currentMonthBilan.ca}</p>
+            </div>
+            <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl">
+              <TrendingUp className="h-6 w-6" />
+            </div>
+          </div>
+
+          <div className="glass-card p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-slate-400">Coûts Ce Mois</p>
+              <p className="text-xl font-bold text-amber-400 mt-1">{data.currentMonthBilan.couts}</p>
+            </div>
+            <div className="p-3 bg-amber-500/10 text-amber-400 rounded-xl">
+              <TrendingDown className="h-6 w-6" />
+            </div>
+          </div>
+
+          <div className="glass-card p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-slate-400">Bénéfice Net Ce Mois</p>
+              <p className={`text-xl font-bold mt-1 ${data.currentMonthBilan.rawMarge >= 0 ? 'text-sky-400' : 'text-red-400'}`}>
+                {data.currentMonthBilan.marge}
+              </p>
+            </div>
+            <div className={`p-3 rounded-xl ${data.currentMonthBilan.rawMarge >= 0 ? 'bg-sky-500/10 text-sky-400' : 'bg-red-500/10 text-red-400'}`}>
+              <DollarSign className="h-6 w-6" />
+            </div>
+          </div>
+        </div>
+
+        <BilanChart data={data.bilanMensuel} />
+      </div>
+
+      {/* Secondary Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <BudgetChart data={data.budgetData} />
         <AvancementChart data={data.depensesData} />
@@ -145,7 +213,7 @@ export default function Dashboard() {
       {/* Alerts Section */}
       {data.alertes.length > 0 && (
         <div>
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
             <AlertTriangle className="h-5 w-5 text-btp-orange" />
             Alertes Récentes
             <span className="ml-2 bg-btp-red/20 text-btp-red text-xs font-medium px-2.5 py-0.5 rounded-full">
@@ -167,3 +235,5 @@ export default function Dashboard() {
     </div>
   );
 }
+
+

@@ -23,20 +23,21 @@ export default function Header({ onMenuClick }) {
 
   return (
     <header 
-      className="h-16 backdrop-blur-md flex items-center justify-between px-4 sm:px-6 sticky top-0 z-30 theme-transition"
+      className="h-16 backdrop-blur-md flex items-center justify-between px-6 sm:px-8 sticky top-0 z-50 theme-transition"
       style={{ 
         backgroundColor: theme === 'dark' ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.85)',
         borderBottom: `1px solid var(--border-primary)`
       }}
     >
-      <div className="flex items-center">
+      <div className="flex items-center space-x-4">
         <button 
           onClick={onMenuClick}
-          className="lg:hidden mr-4 p-1 rounded-md focus:outline-none"
+          className="lg:hidden p-1 rounded-md focus:outline-none"
           style={{ color: 'var(--text-tertiary)' }}
         >
           <Menu className="h-6 w-6" />
         </button>
+
         <h1 className="text-lg font-semibold hidden sm:block" style={{ color: 'var(--text-primary)' }}>
           {getPageTitle()}
         </h1>

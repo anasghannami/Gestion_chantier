@@ -1,7 +1,8 @@
 import { X } from 'lucide-react';
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
-export default function Modal({ isOpen, onClose, title, children }) {
+export default function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-2xl" }) {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -15,16 +16,17 @@ export default function Modal({ isOpen, onClose, title, children }) {
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6">
+      {/* Backdrop Flou Plein Écran (Recouvre Header + Sidebar + Page) */}
       <div 
-        className="fixed inset-0 backdrop-blur-sm transition-opacity" 
-        style={{ backgroundColor: 'var(--overlay-bg)' }}
+        className="fixed inset-0 z-[9999] backdrop-blur-md transition-opacity" 
+        style={{ backgroundColor: 'var(--overlay-bg, rgba(0, 0, 0, 0.6))' }}
         onClick={onClose}
       ></div>
-      
+
       <div 
-        className="relative w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200"
+        className={`relative z-[10000] w-full ${maxWidth} rounded-2xl shadow-2xl flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200`}
         style={{ 
           backgroundColor: 'var(--bg-secondary)',
           border: '1px solid var(--border-secondary)'
@@ -45,6 +47,8 @@ export default function Modal({ isOpen, onClose, title, children }) {
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
+

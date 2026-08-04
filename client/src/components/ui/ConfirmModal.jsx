@@ -1,5 +1,6 @@
-import { AlertTriangle, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Trash2, X, CheckCircle, FileText, Building2 } from 'lucide-react';
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 export default function ConfirmModal({ 
   isOpen, 
@@ -9,7 +10,8 @@ export default function ConfirmModal({
   message = "Êtes-vous sûr de vouloir effectuer cette action ?",
   confirmText = "Confirmer",
   cancelText = "Annuler",
-  type = "danger" // danger, warning, info
+  type = "danger", // danger, warning, info, success
+  icon: CustomIcon
 }) {
   useEffect(() => {
     if (isOpen) {
@@ -36,27 +38,32 @@ export default function ConfirmModal({
       btnBg: 'bg-[#EA580C] hover:bg-[#C2410C] focus:ring-[#EA580C]'
     },
     info: {
-      icon: AlertTriangle,
+      icon: Building2,
       iconBg: 'bg-[#0284C7]/10 text-[#0284C7] border-[#0284C7]/20',
       btnBg: 'bg-[#0284C7] hover:bg-[#0369A1] focus:ring-[#0284C7]'
+    },
+    success: {
+      icon: FileText,
+      iconBg: 'bg-[#16A34A]/10 text-[#16A34A] border-[#16A34A]/20',
+      btnBg: 'bg-[#16A34A] hover:bg-[#15803D] focus:ring-[#16A34A]'
     }
   };
 
   const config = colorConfig[type] || colorConfig.danger;
-  const IconComponent = config.icon;
+  const IconComponent = CustomIcon || config.icon;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-      {/* Backdrop */}
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6">
+      {/* Backdrop Flou Plein Écran (Recouvre Header + Sidebar + Page) */}
       <div 
-        className="fixed inset-0 backdrop-blur-sm transition-opacity" 
-        style={{ backgroundColor: 'var(--overlay-bg)' }}
+        className="fixed inset-0 z-[9999] backdrop-blur-md transition-opacity" 
+        style={{ backgroundColor: 'var(--overlay-bg, rgba(0, 0, 0, 0.6))' }}
         onClick={onClose}
       ></div>
-      
+
       {/* Modal Card */}
       <div 
-        className="relative w-full max-w-md rounded-2xl shadow-2xl flex flex-col p-6 animate-in fade-in zoom-in-95 duration-200"
+        className="relative z-[10000] w-full max-w-md rounded-2xl shadow-2xl flex flex-col p-6 animate-in fade-in zoom-in-95 duration-200"
         style={{ 
           backgroundColor: 'var(--bg-secondary)',
           border: '1px solid var(--border-secondary)'
@@ -95,23 +102,25 @@ export default function ConfirmModal({
 
         {/* Footer Actions */}
         <div className="flex space-x-3 mt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors border"
-            style={{ 
-              backgroundColor: 'var(--bg-primary)', 
-              borderColor: 'var(--border-primary)',
-              color: 'var(--text-primary)'
-            }}
-          >
-            {cancelText}
-          </button>
+          {cancelText ? (
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors border"
+              style={{ 
+                backgroundColor: 'var(--bg-primary)', 
+                borderColor: 'var(--border-primary)',
+                color: 'var(--text-primary)'
+              }}
+            >
+              {cancelText}
+            </button>
+          ) : null}
           
           <button
             type="button"
             onClick={() => {
-              onConfirm();
+              if (onConfirm) onConfirm();
               onClose();
             }}
             className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-white transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent ${config.btnBg}`}
@@ -120,6 +129,8 @@ export default function ConfirmModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
+

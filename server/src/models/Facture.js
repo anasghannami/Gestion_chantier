@@ -14,11 +14,26 @@ const Facture = sequelize.define('Facture', {
   },
   fournisseur_id: {
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: true
   },
   chantier_id: {
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: true
+  },
+  devis_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  client_nom: {
+    type: DataTypes.STRING(255)
+  },
+  type_facture: {
+    type: DataTypes.ENUM('Standard', 'Acompte', 'Solde'),
+    defaultValue: 'Standard'
+  },
+  pourcentage_acompte: {
+    type: DataTypes.DECIMAL(5, 2),
+    allowNull: true
   },
   date_emission: {
     type: DataTypes.DATEONLY,

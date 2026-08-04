@@ -11,6 +11,9 @@ import Commandes from './pages/Commandes';
 import Factures from './pages/Factures';
 import Planning from './pages/Planning';
 import Ouvriers from './pages/Ouvriers';
+import Devis from './pages/Devis';
+import Stocks from './pages/Stocks';
+import SousTraitants from './pages/SousTraitants';
 import { useAuth } from './context/AuthContext';
 
 function ProtectedRoute({ children }) {
@@ -42,12 +45,15 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/chantiers" element={<Chantiers />} />
           <Route path="/chantiers/:id" element={<ChantierDetail />} />
-          <Route path="/fournisseurs" element={<Fournisseurs />} />
-          <Route path="/fournisseurs/:id" element={<FournisseurDetail />} />
-          <Route path="/commandes" element={<Commandes />} />
-          <Route path="/factures" element={<Factures />} />
+          <Route path="/devis" element={<Devis />} />
           <Route path="/planning" element={<Planning />} />
           <Route path="/ouvriers" element={<Ouvriers />} />
+          <Route path="/stocks" element={<Stocks />} />
+          <Route path="/fournisseurs" element={<Fournisseurs />} />
+          <Route path="/fournisseurs/:id" element={<FournisseurDetail />} />
+          <Route path="/sous-traitants" element={<Navigate to="/ouvriers" replace />} />
+          <Route path="/commandes" element={<Commandes />} />
+          <Route path="/factures" element={<Factures />} />
         </Route>
         
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
@@ -55,5 +61,7 @@ function App() {
     </AuthProvider>
   );
 }
+
+
 
 export default App;

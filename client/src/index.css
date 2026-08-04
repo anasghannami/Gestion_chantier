@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-slate-dark: #0F172A;
   --color-slate-card: #1E293B;
@@ -168,6 +170,26 @@ textarea:focus {
   color: var(--text-primary) !important;
 }
 
+.light .text-\[\#FECACA\],
+.light .text-red-200 {
+  color: #991b1b !important;
+}
+
+.light .text-\[\#FDE68A\],
+.light .text-amber-200 {
+  color: #92400e !important;
+}
+
+.light .text-\[\#BAE6FD\],
+.light .text-sky-200 {
+  color: #075985 !important;
+}
+
+.light .text-\[\#BBF7D0\],
+.light .text-emerald-200 {
+  color: #166534 !important;
+}
+
 .light .text-slate-100:not(button):not(a):not(.bg-btp-blue):not(.bg-btp-blue-dark):not(.bg-btp-orange):not(.bg-btp-green):not(.bg-btp-red):not(.bg-slate-700) {
   color: var(--text-primary) !important;
 }
@@ -182,6 +204,17 @@ textarea:focus {
 
 .light .text-slate-400:not(button):not(a):not(.bg-btp-blue):not(.bg-btp-blue-dark):not(.bg-btp-orange):not(.bg-btp-green):not(.bg-btp-red):not(.bg-slate-700) {
   color: var(--text-tertiary) !important;
+}
+
+/* Light mode overrides for navigation & action buttons */
+.light button.text-slate-400,
+.light a.text-slate-400 {
+  color: var(--text-secondary) !important;
+}
+
+.light button:hover.hover\:text-white,
+.light a:hover.hover\:text-white {
+  color: var(--text-primary) !important;
 }
 
 /* Light mode background overrides */

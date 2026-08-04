@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, FileSpreadsheet, Download } from 'lucide-react';
 import DataTable from '../components/ui/DataTable';
 import Badge from '../components/ui/Badge';
 import Modal from '../components/ui/Modal';
 import api from '../api/axios';
+import { exportToExcel, exportToPDF } from '../utils/exportUtils';
 
 export default function Fournisseurs() {
   const [fournisseurs, setFournisseurs] = useState([]);
@@ -13,6 +14,38 @@ export default function Fournisseurs() {
   const [submitting, setSubmitting] = useState(false);
   const [selectedCategorie, setSelectedCategorie] = useState('');
   const navigate = useNavigate();
+
+  const handleExportExcel = () => {
+    const exportColumns = [
+      { header: 'Code', accessor: 'code_fournisseur' },
+      { header: 'Raison Sociale', accessor: 'raison_sociale' },
+      { header: 'Catégorie', accessor: 'categorie' },
+      { header: 'Contact Référent', accessor: 'contact_referent' },
+      { header: 'Téléphone', accessor: 'telephone' },
+      { header: 'Email', accessor: 'email' },
+      { header: 'Conditions Paiement', accessor: 'conditions_paiement' },
+      { header: 'Statut', accessor: 'statut' }
+    ];
+    exportToExcel(exportColumns, fournisseurs, 'Annuaire_Fournisseurs_BTP');
+  };
+
+  const handleExportPDF = () => {
+    const exportColumns = [
+      { header: 'Code', accessor: 'code_fournisseur' },
+      { header: 'Raison Sociale', accessor: 'raison_sociale' },
+      { header: 'Catégorie', accessor: 'categorie' },
+      { header: 'Téléphone', accessor: 'telephone' },
+      { header: 'Conditions Paiement', accessor: 'conditions_paiement' },
+      { header: 'Statut', accessor: 'statut' }
+    ];
+    exportToPDF({
+      title: 'Annuaire Répertoire des Fournisseurs',
+      subtitle: `Total partenaires référencés : ${fournisseurs.length}`,
+      columns: exportColumns,
+      data: fournisseurs,
+      filename: 'Annuaire_Fournisseurs_BTP'
+    });
+  };
 
   const [formData, setFormData] = useState({
     code_fournisseur: '', raison_sociale: '', categorie: 'Matériaux', telephone: '', email: '', contact_referent: '', adresse: '', rc_if: '', conditions_paiement: '30 jours', note: '', statut: 'Actif'
@@ -75,20 +108,37 @@ export default function Fournisseurs() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl font-bold text-white">Annuaire Fournisseurs</h1>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <select 
-            className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:border-btp-blue outline-none"
+            className="bg-slate-800 border border-slate-700 text-white rounded-xl px-3.5 py-2.5 text-xs focus:border-btp-blue outline-none"
             value={selectedCategorie}
             onChange={e => setSelectedCategorie(e.target.value)}
           >
             <option value="">Toutes catégories</option>
             {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
           </select>
+
+          <button 
+            onClick={handleExportExcel}
+            className="flex items-center px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow active:scale-95 whitespace-nowrap"
+            title="Exporter la liste des fournisseurs sous Excel"
+          >
+            <FileSpreadsheet className="h-4 w-4 mr-1.5" /> Export Excel
+          </button>
+
+          <button 
+            onClick={handleExportPDF}
+            className="flex items-center px-3.5 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow active:scale-95 whitespace-nowrap"
+            title="Exporter l'annuaire des fournisseurs au format PDF"
+          >
+            <Download className="h-4 w-4 mr-1.5" /> Annuaire PDF
+          </button>
+
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center px-4 py-2 bg-btp-blue hover:bg-btp-blue-dark text-white rounded-lg transition-colors font-medium"
+            className="flex items-center px-4 py-2 bg-btp-blue hover:bg-btp-blue-dark text-white rounded-lg transition-all duration-200 font-semibold text-xs shadow-sm hover:shadow active:scale-95 whitespace-nowrap"
           >
-            <Plus className="h-5 w-5 mr-2" />
+            <Plus className="h-4 w-4 mr-1.5" />
             Nouveau Fournisseur
           </button>
         </div>

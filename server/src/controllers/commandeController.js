@@ -1,4 +1,4 @@
-import { Commande, Fournisseur, Chantier } from '../models/index.js';
+import { Commande, Fournisseur, Chantier, Materiau, MouvementStock } from '../models/index.js';
 
 export const getAllCommandes = async (req, res, next) => {
   const { statut, chantier_id, fournisseur_id } = req.query;
@@ -37,6 +37,7 @@ export const updateCommande = async (req, res, next) => {
     return res.status(404).json({ message: 'Commande introuvable.' });
   }
 
+  const previousStatut = commande.statut;
   const data = { ...req.body };
   const nullableFields = ['date_commande', 'date_livraison_prevue', 'montant_ht', 'montant_ttc', 'fournisseur_id', 'chantier_id'];
   nullableFields.forEach(field => {
@@ -46,6 +47,32 @@ export const updateCommande = async (req, res, next) => {
   });
 
   await commande.update(data);
+
+  // Auto-stock entry when status changes to 'Livrée'
+  if (data.statut === 'Livrée' && previousStatut !== 'Livrée') {
+    try {
+      const firstMateriau = await Materiau.findOne();
+      if (firstMateriau) {
+        const addedQty = 50; // Quantité livrée estimée
+        await firstMateriau.update({
+          quantite_stock: parseFloat(firstMateriau.quantite_stock || 0) + addedQty
+        });
+
+        await MouvementStock.create({
+          materiau_id: firstMateriau.id,
+          chantier_id: commande.chantier_id,
+          commande_id: commande.id,
+          type_mouvement: 'Entrée',
+          quantite: addedQty,
+          date_mouvement: new Date().toISOString().split('T')[0],
+          motif: `Entrée automatique suite à livraison Commande N° ${commande.num_commande}`
+        });
+      }
+    } catch (e) {
+      console.error("Erreur mise à jour automatique stock sur livraison commande:", e);
+    }
+  }
+
   res.json(commande);
 };
 

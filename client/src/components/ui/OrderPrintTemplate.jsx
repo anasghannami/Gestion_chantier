@@ -1,7 +1,16 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { HardHat, Calendar, Clock } from 'lucide-react';
+import api from '../../api/axios';
 
 export default function OrderPrintTemplate({ commande }) {
+  const [societe, setSociete] = useState(null);
+
+  useEffect(() => {
+    api.get('/societe')
+      .then(res => setSociete(res.data))
+      .catch(err => console.error("Erreur chargement société impression commande:", err));
+  }, []);
+
   if (!commande) return null;
 
   const formatMAD = (val) => new Intl.NumberFormat('fr-MA', { style: 'currency', currency: 'MAD', maximumFractionDigits: 2 }).format(val || 0);
@@ -22,22 +31,31 @@ export default function OrderPrintTemplate({ commande }) {
       <div className="flex justify-between items-start border-b-2 border-[#0284C7] pb-6 mb-6">
         <div>
           <div className="flex items-center space-x-3 mb-2">
-            {/* Logo Badge Icon */}
-            <div 
-              className="p-2.5 bg-sky-100 border-2 border-[#0284C7] rounded-xl flex items-center justify-center shadow-sm"
-              style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
-            >
-              <HardHat className="h-8 w-8 text-[#0284C7]" style={{ color: '#0284C7', stroke: '#0284C7' }} />
-            </div>
+            {societe?.logo ? (
+              <img 
+                src={societe.logo.startsWith('http') ? societe.logo : `http://localhost:5000${societe.logo}`} 
+                alt="Logo Officiel" 
+                className="h-14 max-w-[180px] object-contain rounded"
+              />
+            ) : (
+              <div 
+                className="p-2.5 bg-sky-100 border-2 border-[#0284C7] rounded-xl flex items-center justify-center shadow-sm"
+                style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
+              >
+                <HardHat className="h-8 w-8 text-[#0284C7]" style={{ color: '#0284C7', stroke: '#0284C7' }} />
+              </div>
+            )}
             <div>
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight">BTP MANAGER</h1>
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight">{societe?.nom || 'BTP MANAGER SARL'}</h1>
               <p className="text-xs font-bold text-[#0284C7] tracking-wider uppercase">Gestion & Suivi de Chantiers</p>
             </div>
           </div>
           <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-            123 Boulevard Mohammed V, Casablanca Finance City, Maroc<br />
-            Tél: +212 5 22 00 00 00 | Email: achats@btpmanager.ma<br />
-            <span className="font-medium text-slate-600">ICE: 001234567000089 | IF: 45678901 | RC: 234567</span>
+            {societe?.adresse || '123 Boulevard Mohammed V, Casablanca, Maroc'}<br />
+            Tél: {societe?.telephone || '+212 5 22 00 00 00'} | Email: {societe?.email || 'achats@btpmanager.ma'}<br />
+            <span className="font-medium text-slate-600">
+              ICE: {societe?.ice || '001234567000089'} | IF: {societe?.if_fiscal || '45678901'} | RC: {societe?.rc || '234567'} {societe?.patente ? `| Patente: ${societe.patente}` : ''}
+            </span>
           </p>
         </div>
 
@@ -134,16 +152,17 @@ export default function OrderPrintTemplate({ commande }) {
           <div className="h-10"></div>
         </div>
         <div className="border border-dashed border-slate-300 p-4 rounded-xl text-center">
-          <p className="text-[10px] font-bold uppercase text-slate-400 mb-6">Signature Autorisée / Service Achats</p>
+          <p className="text-[10px] font-bold uppercase text-slate-400 mb-6">Signature Autorisée / Service Achats {societe?.nom || ''}</p>
           <div className="h-10"></div>
         </div>
       </div>
 
       {/* Footer Legal & Time Stamp */}
       <div className="text-center pt-4 border-t border-slate-100 text-[10px] text-slate-400 flex justify-between items-center">
-        <span>BTP Manager ERP System — Document Officiel</span>
+        <span>{societe?.nom || 'BTP Manager SARL'} • ICE: {societe?.ice || '001234567000089'} — Document Officiel</span>
         <span>Émis le {printDateStr} à {printTimeStr}</span>
       </div>
     </div>
   );
 }
+
