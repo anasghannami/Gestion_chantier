@@ -7,7 +7,8 @@
   "scripts": {
     "build:client": "npm --prefix client run build",
     "start": "electron .",
-    "dist": "npm run build:client && npx electron-builder --win --dir"
+    "rebuild:sqlite": "electron-rebuild --module-dir server -w sqlite3 -f",
+    "dist": "npm run build:client && npm run rebuild:sqlite && npx electron-builder --win --dir"
   },
   "build": {
     "appId": "com.btp.gestionchantier",
@@ -20,7 +21,11 @@
       "main.js",
       "build/**/*",
       "client/dist/**/*",
-      "server/**/*"
+      "server/**/*",
+      "!server/data/**"
+    ],
+    "asarUnpack": [
+      "server/node_modules/sqlite3/**/*"
     ],
     "win": {
       "target": [

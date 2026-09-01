@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import { Header } from '../components/ui/Header';
+import { ScreenContainer } from '../components/ui/ScreenContainer';
 import { Card } from '../components/ui/Card';
 import { Truck, Users, Calendar, Sun, Moon, LogOut, ChevronRight, HardHat, ShieldCheck, Boxes } from 'lucide-react-native';
 
@@ -54,10 +54,11 @@ export function MoreMenuScreen({ navigation }) {
   ];
 
   return (
-    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
-      <Header title="Menu & Options" showLogout={false} />
-
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+    <ScreenContainer
+      headerTitle="Menu & Options"
+      scrollable={true}
+      hasTabBar={true}
+    >
         {/* User Card */}
         <Card style={styles.userCard}>
           <View style={[styles.avatarCircle, { backgroundColor: themeColors.primaryBackground }]}>
@@ -130,13 +131,11 @@ export function MoreMenuScreen({ navigation }) {
               </View>
               <View style={styles.menuTextWrap}>
                 <Text style={[styles.menuTitle, { color: themeColors.danger }]}>Se Déconnecter</Text>
-                <Text style={[styles.menuSub, { color: themeColors.textSecondary }]}>Fermer la session mobile</Text>
               </View>
             </View>
           </Card>
         </TouchableOpacity>
-      </ScrollView>
-    </View>
+    </ScreenContainer>
   );
 }
 

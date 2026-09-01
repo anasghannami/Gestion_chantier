@@ -21,6 +21,9 @@ import EvenementCalendrier from './EvenementCalendrier.js';
 import EnginEquipement from './EnginEquipement.js';
 import AffectationRessource from './AffectationRessource.js';
 import JalonPermis from './JalonPermis.js';
+import AvanceOuvrier from './AvanceOuvrier.js';
+import PaiementSemaine from './PaiementSemaine.js';
+import TacheIntervenant from './TacheIntervenant.js';
 
 // Utilisateur <-> Chantier
 Utilisateur.hasMany(Chantier, { foreignKey: 'chef_chantier_id', as: 'chantiers' });
@@ -98,6 +101,22 @@ AffectationRessource.belongsTo(PhaseChantier, { foreignKey: 'phase_id', as: 'pha
 AffectationRessource.belongsTo(Ouvrier, { foreignKey: 'ouvrier_id', as: 'ouvrier' });
 AffectationRessource.belongsTo(EnginEquipement, { foreignKey: 'engin_id', as: 'engin' });
 
+// Ouvrier <-> AvanceOuvrier
+Ouvrier.hasMany(AvanceOuvrier, { foreignKey: 'ouvrier_id', as: 'avances', onDelete: 'CASCADE' });
+AvanceOuvrier.belongsTo(Ouvrier, { foreignKey: 'ouvrier_id', as: 'ouvrier' });
+
+// Ouvrier <-> PaiementSemaine
+Ouvrier.hasMany(PaiementSemaine, { foreignKey: 'ouvrier_id', as: 'paiements_semaine', onDelete: 'CASCADE' });
+PaiementSemaine.belongsTo(Ouvrier, { foreignKey: 'ouvrier_id', as: 'ouvrier' });
+
+// Ouvrier <-> TacheIntervenant (intervenants payés à la tâche)
+Ouvrier.hasMany(TacheIntervenant, { foreignKey: 'ouvrier_id', as: 'taches_intervenant', onDelete: 'CASCADE' });
+TacheIntervenant.belongsTo(Ouvrier, { foreignKey: 'ouvrier_id', as: 'ouvrier' });
+
+// PaiementSemaine <-> TacheIntervenant (tâches réglées lors d'une clôture)
+PaiementSemaine.hasMany(TacheIntervenant, { foreignKey: 'paiement_semaine_id', as: 'taches_reglees' });
+TacheIntervenant.belongsTo(PaiementSemaine, { foreignKey: 'paiement_semaine_id', as: 'paiement_semaine' });
+
 // Chantier <-> JalonPermis
 Chantier.hasMany(JalonPermis, { foreignKey: 'jalons', as: 'jalons', onDelete: 'CASCADE' });
 JalonPermis.belongsTo(Chantier, { foreignKey: 'chantier_id', as: 'chantier' });
@@ -139,5 +158,8 @@ export {
   EvenementCalendrier,
   EnginEquipement,
   AffectationRessource,
-  JalonPermis
+  JalonPermis,
+  AvanceOuvrier,
+  PaiementSemaine,
+  TacheIntervenant
 };

@@ -34,6 +34,14 @@ const Utilisateur = sequelize.define('Utilisateur', {
   },
   last_login: {
     type: DataTypes.DATE
+  },
+  reset_token: {
+    type: DataTypes.STRING(255),
+    allowNull: true
+  },
+  reset_token_expires: {
+    type: DataTypes.DATE,
+    allowNull: true
   }
 }, {
   tableName: 'utilisateurs',

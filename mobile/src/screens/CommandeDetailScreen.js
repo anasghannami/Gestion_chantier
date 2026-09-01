@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
-import { ArrowLeft, Package, Building2, Truck, Calendar, DollarSign, Clock, CheckCircle2 } from 'lucide-react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { Package, Building2, Truck, Calendar, DollarSign, Clock, CheckCircle2 } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
+import { ScreenContainer } from '../components/ui/ScreenContainer';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import api from '../api/axios';
 
 export function CommandeDetailScreen({ route, navigation }) {
   const { id, item } = route.params || {};
-  const { themeColors, isDarkMode } = useTheme();
+  const { themeColors } = useTheme();
   const [commande, setCommande] = useState(item || null);
   const [loading, setLoading] = useState(!item);
 
@@ -23,30 +24,23 @@ export function CommandeDetailScreen({ route, navigation }) {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.centerLoading, { backgroundColor: themeColors.background }]}>
-        <ActivityIndicator size="large" color={themeColors.primary} />
-      </SafeAreaView>
+      <ScreenContainer showBack={true}>
+        <View style={styles.centerLoading}>
+          <ActivityIndicator size="large" color={themeColors.primary} />
+        </View>
+      </ScreenContainer>
     );
   }
 
   const data = commande || item || {};
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: themeColors.border }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <ArrowLeft size={22} color={themeColors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: themeColors.text }]}>
-          Détails Commande
-        </Text>
-        <View style={{ width: 22 }} />
-      </View>
-
-      <ScrollView contentContainerStyle={styles.content}>
+    <ScreenContainer
+      headerTitle="Détails Commande"
+      showBack={true}
+      scrollable={true}
+      contentContainerStyle={styles.content}
+    >
         {/* Main Card */}
         <Card style={{ marginBottom: 14 }}>
           <View style={styles.rowBetween}>
@@ -119,8 +113,7 @@ export function CommandeDetailScreen({ route, navigation }) {
             <Text style={[styles.articleQty, { color: themeColors.subtext }]}>2.5 Tonnes</Text>
           </View>
         </Card>
-      </ScrollView>
-    </SafeAreaView>
+    </ScreenContainer>
   );
 }
 

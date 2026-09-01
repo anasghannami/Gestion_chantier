@@ -310,16 +310,7 @@ export default function Factures() {
       header: 'Actions', 
       render: (row) => (
         <div className="flex items-center space-x-2">
-          {canEdit && row.statut_paiement !== 'Payée' && (
-            <button
-              onClick={(e) => { e.stopPropagation(); handleOpenPaymentModal(row); }}
-              className="p-1.5 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 rounded-lg transition-colors text-xs flex items-center space-x-1"
-              title="Enregistrer un règlement"
-            >
-              <CreditCard className="h-3.5 w-3.5" />
-              <span>Régler</span>
-            </button>
-          )}
+
           {canEdit && (
             <button 
               onClick={(e) => { e.stopPropagation(); handleOpenEditModal(row); }}

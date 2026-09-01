@@ -6,7 +6,15 @@ import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { Sun, Moon, LogOut, ArrowLeft } from 'lucide-react-native';
 
-export function Header({ title, showLogout = true, showBack = false }) {
+export function Header({
+  title,
+  showLogout = false,
+  showBack = false,
+  onBack,
+  rightAction,
+  safeAreaTop = true,
+  style,
+}) {
   const { themeColors, isDark, toggleTheme } = useTheme();
   const { logout } = useAuth();
   const navigation = useNavigation();
@@ -14,10 +22,20 @@ export function Header({ title, showLogout = true, showBack = false }) {
 
   const canGoBack = showBack || (navigation && navigation.canGoBack && navigation.canGoBack());
 
-  const paddingTop = Math.max(
-    insets.top,
-    Platform.OS === 'android' ? (StatusBar.currentHeight || 28) : 0
-  );
+  const handleBackPress = () => {
+    if (onBack) {
+      onBack();
+    } else if (navigation && navigation.canGoBack && navigation.canGoBack()) {
+      navigation.goBack();
+    }
+  };
+
+  const paddingTop = safeAreaTop
+    ? Math.max(
+        insets.top,
+        Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0
+      )
+    : 0;
 
   return (
     <View
@@ -28,12 +46,13 @@ export function Header({ title, showLogout = true, showBack = false }) {
           borderBottomColor: themeColors.border,
           paddingTop: paddingTop,
         },
+        style,
       ]}
     >
       <View style={styles.headerContent}>
         {canGoBack && (
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
+            onPress={handleBackPress}
             style={[styles.backBtn, { backgroundColor: themeColors.primaryBackground }]}
             activeOpacity={0.7}
           >
@@ -46,26 +65,32 @@ export function Header({ title, showLogout = true, showBack = false }) {
         </Text>
 
         <View style={styles.rightActions}>
-          <TouchableOpacity
-            onPress={toggleTheme}
-            style={[styles.iconButton, { backgroundColor: themeColors.primaryBackground }]}
-            activeOpacity={0.7}
-          >
-            {isDark ? (
-              <Sun size={20} color={themeColors.primary} />
-            ) : (
-              <Moon size={20} color={themeColors.primary} />
-            )}
-          </TouchableOpacity>
+          {rightAction ? (
+            rightAction
+          ) : (
+            <>
+              <TouchableOpacity
+                onPress={toggleTheme}
+                style={[styles.iconButton, { backgroundColor: themeColors.primaryBackground }]}
+                activeOpacity={0.7}
+              >
+                {isDark ? (
+                  <Sun size={20} color={themeColors.primary} />
+                ) : (
+                  <Moon size={20} color={themeColors.primary} />
+                )}
+              </TouchableOpacity>
 
-          {showLogout && (
-            <TouchableOpacity
-              onPress={logout}
-              style={[styles.iconButton, { backgroundColor: themeColors.dangerBg, marginLeft: 8 }]}
-              activeOpacity={0.7}
-            >
-              <LogOut size={18} color={themeColors.danger} />
-            </TouchableOpacity>
+              {showLogout && (
+                <TouchableOpacity
+                  onPress={logout}
+                  style={[styles.iconButton, { backgroundColor: themeColors.dangerBg, marginLeft: 8 }]}
+                  activeOpacity={0.7}
+                >
+                  <LogOut size={18} color={themeColors.danger} />
+                </TouchableOpacity>
+              )}
+            </>
           )}
         </View>
       </View>

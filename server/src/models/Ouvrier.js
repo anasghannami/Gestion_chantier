@@ -29,6 +29,10 @@ const Ouvrier = sequelize.define('Ouvrier', {
     type: DataTypes.DECIMAL(10, 2),
     defaultValue: 0
   },
+  type_remuneration: {
+    type: DataTypes.ENUM('Journalier', 'Tâche'),
+    defaultValue: 'Journalier'
+  },
   statut: {
     type: DataTypes.ENUM('Actif', 'Inactif', 'En congé'),
     defaultValue: 'Actif'

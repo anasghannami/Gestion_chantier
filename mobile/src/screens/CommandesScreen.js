@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal, ScrollView, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
-import { Header } from '../components/ui/Header';
+import { ScreenContainer } from '../components/ui/ScreenContainer';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
@@ -11,6 +12,7 @@ import { Plus, ShoppingBag, Truck, Calendar, DollarSign, X } from 'lucide-react-
 
 export function CommandesScreen({ navigation }) {
   const { themeColors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [commandes, setCommandes] = useState([]);
   const [fournisseurs, setFournisseurs] = useState([]);
   const [chantiers, setChantiers] = useState([]);
@@ -65,9 +67,9 @@ export function CommandesScreen({ navigation }) {
         article,
         quantite: parseInt(quantite) || 1,
         montant: parseFloat(montant) || 0,
-        statut: 'En attente',
-        FournisseurId: selectedFournisseur || null,
-        ChantierId: selectedChantier || null,
+        fournisseur_id: selectedFournisseur || null,
+        chantier_id: selectedChantier || null,
+        statut: 'En attente'
       });
 
       setModalVisible(false);
@@ -109,9 +111,7 @@ export function CommandesScreen({ navigation }) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
-      <Header title="Commandes Matériaux" />
-
+    <ScreenContainer headerTitle="Commandes Matériaux" hasTabBar={true}>
       <View style={styles.topBar}>
         <Text style={[styles.subTitle, { color: themeColors.textSecondary }]}>
           Suivi des approvisionnements
@@ -121,7 +121,7 @@ export function CommandesScreen({ navigation }) {
           onPress={() => setModalVisible(true)}
           activeOpacity={0.8}
         >
-          <Plus size={22} color="#ffffff" />
+          <Plus size={20} color="#ffffff" />
         </TouchableOpacity>
       </View>
 
@@ -129,7 +129,7 @@ export function CommandesScreen({ navigation }) {
         data={commandes}
         keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={themeColors.primary} />}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: 80 + insets.bottom }]}
         ListEmptyComponent={
           !loading && (
             <Card style={styles.emptyCard}>
@@ -208,7 +208,7 @@ export function CommandesScreen({ navigation }) {
           </View>
         </View>
       </Modal>
-    </View>
+    </ScreenContainer>
   );
 }
 

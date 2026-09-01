@@ -1,5 +1,6 @@
 import { SousTraitant, ContratSousTraitance, Chantier } from '../models/index.js';
 import { Op } from 'sequelize';
+import { iLike } from '../utils/dbOps.js';
 
 export const getAllSousTraitants = async (req, res, next) => {
   try {
@@ -8,9 +9,9 @@ export const getAllSousTraitants = async (req, res, next) => {
 
     if (search) {
       where[Op.or] = [
-        { nom_entreprise: { [Op.iLike]: `%${search}%` } },
-        { corps_etat: { [Op.iLike]: `%${search}%` } },
-        { nom_contact: { [Op.iLike]: `%${search}%` } }
+        { nom_entreprise: { [iLike]: `%${search}%` } },
+        { corps_etat: { [iLike]: `%${search}%` } },
+        { nom_contact: { [iLike]: `%${search}%` } }
       ];
     }
 

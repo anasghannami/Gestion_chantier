@@ -1,5 +1,6 @@
 import { Devis, DevisLigne, Chantier, Facture, Fournisseur } from '../models/index.js';
 import { Op } from 'sequelize';
+import { iLike } from '../utils/dbOps.js';
 
 // Helper pour générer un numéro de devis auto et unique (ex: DEV-2026-001)
 const generateNumDevis = async () => {
@@ -29,8 +30,8 @@ export const getAllDevis = async (req, res, next) => {
 
     if (search) {
       where[Op.or] = [
-        { client_nom: { [Op.iLike]: `%${search}%` } },
-        { num_devis: { [Op.iLike]: `%${search}%` } }
+        { client_nom: { [iLike]: `%${search}%` } },
+        { num_devis: { [iLike]: `%${search}%` } }
       ];
     }
 

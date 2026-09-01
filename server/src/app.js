@@ -4,7 +4,8 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import sequelize from './config/database.js';
-import './models/index.js';
+import * as models from './models/index.js';
+import { runAdditiveMigrations } from './utils/ensureColumns.js';
 
 import authRoutes from './routes/auth.js';
 import chantiersRoutes from './routes/chantiers.js';
@@ -24,6 +25,7 @@ import phasesRoutes from './routes/phases.js';
 import evenementsRoutes from './routes/evenements.js';
 import enginsRoutes from './routes/engins.js';
 import jalonsRoutes from './routes/jalons.js';
+import paiementOuvriersRoutes from './routes/paiementOuvriers.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -56,6 +58,7 @@ app.use('/api/phases', phasesRoutes);
 app.use('/api/evenements', evenementsRoutes);
 app.use('/api/engins', enginsRoutes);
 app.use('/api/jalons', jalonsRoutes);
+app.use('/api/paiement-ouvriers', paiementOuvriersRoutes);
 
 
 
@@ -84,9 +87,30 @@ const PORT = process.env.PORT || 5000;
 
 sequelize.sync({ constraints: false }).then(async () => {
   try {
+    await runAdditiveMigrations(models);
+  } catch (e) {
+    console.error('Erreur migrations additives:', e.message);
+  }
+
+  try {
+    const bcrypt = (await import('bcryptjs')).default;
+    const anassEmail = 'anassghamam60@gmail.com';
+    const existingAnass = await Utilisateur.findOne({ where: { email: anassEmail } });
+    if (!existingAnass) {
+      const hash = await bcrypt.hash('anas1234', 10);
+      await Utilisateur.create({
+        nom: 'Ghamam',
+        prenom: 'Anass',
+        email: anassEmail,
+        mot_de_passe_hash: hash,
+        role: 'Admin',
+        statut: 'Actif'
+      });
+      console.log('Compte Administrateur Anass initialisé (anassghamam60@gmail.com / anas1234).');
+    }
+
     const userCount = await Utilisateur.count();
     if (userCount === 0) {
-      const bcrypt = (await import('bcryptjs')).default;
       const hash = await bcrypt.hash('othmane12345', 10);
       await Utilisateur.create({
         nom: 'Znidi',

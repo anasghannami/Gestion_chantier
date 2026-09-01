@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { HardHat, Calendar, Clock } from 'lucide-react';
+import { Calendar, Clock } from 'lucide-react';
 import api from '../../api/axios';
 
 export default function InvoicePrintTemplate({ facture }) {
@@ -36,11 +36,11 @@ export default function InvoicePrintTemplate({ facture }) {
                 className="h-14 max-w-[180px] object-contain rounded"
               />
             ) : (
-              <div 
-                className="p-2.5 bg-sky-100 border-2 border-[#0284C7] rounded-xl flex items-center justify-center shadow-sm"
+              <div
+                className="p-1.5 bg-white border-2 border-[#0284C7] rounded-xl flex items-center justify-center shadow-sm"
                 style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
               >
-                <HardHat className="h-8 w-8 text-[#0284C7]" style={{ color: '#0284C7', stroke: '#0284C7' }} />
+                <img src="/logo.png" alt="BTP Manager" className="h-10 w-10 object-contain" />
               </div>
             )}
             <div>

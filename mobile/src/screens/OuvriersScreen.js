@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal, ScrollView, Alert, Linking } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
-import { Header } from '../components/ui/Header';
+import { ScreenContainer } from '../components/ui/ScreenContainer';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
@@ -11,6 +12,7 @@ import { Plus, Users, Phone, HardHat, X } from 'lucide-react-native';
 
 export function OuvriersScreen({ navigation }) {
   const { themeColors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [ouvriers, setOuvriers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -72,9 +74,7 @@ export function OuvriersScreen({ navigation }) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
-      <Header title="Équipe & Ouvriers" />
-
+    <ScreenContainer headerTitle="Équipe & Ouvriers" showBack={true}>
       <View style={styles.topBar}>
         <Text style={[styles.subTitle, { color: themeColors.textSecondary }]}>
           Gestion du personnel du chantier
@@ -84,7 +84,7 @@ export function OuvriersScreen({ navigation }) {
           onPress={() => setModalVisible(true)}
           activeOpacity={0.8}
         >
-          <Plus size={22} color="#ffffff" />
+          <Plus size={20} color="#ffffff" />
         </TouchableOpacity>
       </View>
 
@@ -92,7 +92,7 @@ export function OuvriersScreen({ navigation }) {
         data={ouvriers}
         keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={themeColors.primary} />}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: 30 + insets.bottom }]}
         ListEmptyComponent={
           !loading && (
             <Card style={styles.emptyCard}>
@@ -167,7 +167,7 @@ export function OuvriersScreen({ navigation }) {
           </View>
         </View>
       </Modal>
-    </View>
+    </ScreenContainer>
   );
 }
 

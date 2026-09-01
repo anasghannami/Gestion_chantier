@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, ActivityIndicator,
-  TouchableOpacity, Alert, Image, SafeAreaView, StatusBar
+  TouchableOpacity, Alert, Image
 } from 'react-native';
 import {
   MapPin, User, Calendar, DollarSign, ArrowLeft, Edit3,
@@ -10,6 +10,8 @@ import {
 import * as Haptics from 'expo-haptics';
 import Toast from 'react-native-toast-message';
 import { useTheme } from '../context/ThemeContext';
+import { ScreenContainer } from '../components/ui/ScreenContainer';
+import { FloatingActionButton } from '../components/ui/FloatingActionButton';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import api from '../api/axios';
@@ -25,7 +27,7 @@ const TABS = [
 
 export function ChantierDetailScreen({ route, navigation }) {
   const { id } = route.params || {};
-  const { themeColors, isDarkMode } = useTheme();
+  const { themeColors } = useTheme();
 
   const [chantier, setChantier] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -72,44 +74,40 @@ export function ChantierDetailScreen({ route, navigation }) {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.centerLoading, { backgroundColor: themeColors.background }]}>
-        <ActivityIndicator size="large" color={themeColors.primary} />
-      </SafeAreaView>
+      <ScreenContainer showBack={true}>
+        <View style={styles.centerLoading}>
+          <ActivityIndicator size="large" color={themeColors.primary} />
+        </View>
+      </ScreenContainer>
     );
   }
 
   if (!chantier) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]}>
+      <ScreenContainer showBack={true}>
         <Card style={{ margin: 20 }}>
           <Text style={{ color: themeColors.text, textAlign: 'center' }}>Chantier non trouvé.</Text>
           <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 12 }}>
             <Text style={{ color: themeColors.primary, textAlign: 'center' }}>Retour</Text>
           </TouchableOpacity>
         </Card>
-      </SafeAreaView>
+      </ScreenContainer>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-
-      {/* Top Bar */}
-      <View style={[styles.header, { borderBottomColor: themeColors.border }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <ArrowLeft size={22} color={themeColors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: themeColors.text }]} numberOfLines={1}>
-          {chantier.nom}
-        </Text>
+    <ScreenContainer
+      headerTitle={chantier.nom}
+      showBack={true}
+      rightAction={
         <TouchableOpacity
           onPress={() => navigation.navigate('ChantierForm', { chantier })}
           style={styles.editBtn}
         >
           <Edit3 size={20} color={themeColors.primary} />
         </TouchableOpacity>
-      </View>
+      }
+    >
 
       {/* Internal Segmented Tab Bar */}
       <View style={styles.tabContainer}>
@@ -305,16 +303,10 @@ export function ChantierDetailScreen({ route, navigation }) {
           </View>
         )}
       </ScrollView>
-
-      {/* Floating Action Button (FAB) */}
-      <TouchableOpacity
-        activeOpacity={0.85}
+      <FloatingActionButton
         onPress={() => Toast.show({ type: 'info', text1: 'Prise de photo / note activée' })}
-        style={[styles.fab, { backgroundColor: themeColors.primary }]}
-      >
-        <Plus size={24} color="#FFFFFF" />
-      </TouchableOpacity>
-    </SafeAreaView>
+      />
+    </ScreenContainer>
   );
 }
 

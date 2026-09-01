@@ -1,16 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, RefreshControl,
-  TouchableOpacity, StatusBar
+  TouchableOpacity
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Building2, ShoppingBag, Bell, Package,
   ShieldAlert, ChevronRight, AlertCircle, AlertTriangle, FileText
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../context/ThemeContext';
-import { Header } from '../components/ui/Header';
+import { ScreenContainer } from '../components/ui/ScreenContainer';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { SkeletonDashboard } from '../components/SkeletonLoader';
@@ -18,7 +17,7 @@ import { CacheService } from '../services/cacheService';
 import api from '../api/axios';
 
 export function DashboardScreen({ navigation }) {
-  const { themeColors, isDarkMode } = useTheme();
+  const { themeColors } = useTheme();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [alerts, setAlerts] = useState([]);
@@ -107,23 +106,21 @@ export function DashboardScreen({ navigation }) {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]}>
+      <ScreenContainer headerTitle="Tableau de Bord — BTP Manager" hasTabBar={true}>
         <SkeletonDashboard />
-      </SafeAreaView>
+      </ScreenContainer>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <Header title="Tableau de Bord — BTP Manager" showLogout={false} />
-
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={themeColors.primary} />
-        }
-      >
+    <ScreenContainer
+      headerTitle="Tableau de Bord — BTP Manager"
+      scrollable={true}
+      hasTabBar={true}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={themeColors.primary} />
+      }
+    >
         {/* KPI Cards Grid */}
         <View style={styles.grid}>
           <TouchableOpacity
@@ -267,15 +264,11 @@ export function DashboardScreen({ navigation }) {
                     type={item.statut === 'Terminé' ? 'success' : 'primary'}
                   />
                 </View>
-                <Text style={[styles.chantierClient, { color: themeColors.subtext }]}>
-                  Client: {item.client || 'Client Privé'}
-                </Text>
               </Card>
             </TouchableOpacity>
           ))
         )}
-      </ScrollView>
-    </SafeAreaView>
+    </ScreenContainer>
   );
 }
 

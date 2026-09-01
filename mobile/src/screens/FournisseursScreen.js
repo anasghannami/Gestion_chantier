@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal, ScrollView, Alert, Linking } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
-import { Header } from '../components/ui/Header';
+import { ScreenContainer } from '../components/ui/ScreenContainer';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
@@ -10,6 +11,7 @@ import { Plus, Phone, Mail, MapPin, Truck, X } from 'lucide-react-native';
 
 export function FournisseursScreen({ navigation }) {
   const { themeColors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [fournisseurs, setFournisseurs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -80,9 +82,7 @@ export function FournisseursScreen({ navigation }) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
-      <Header title="Fournisseurs" />
-
+    <ScreenContainer headerTitle="Fournisseurs" showBack={true}>
       <View style={styles.topBar}>
         <Text style={[styles.subTitle, { color: themeColors.textSecondary }]}>
           Annuaire des prestataires & matériaux
@@ -92,7 +92,7 @@ export function FournisseursScreen({ navigation }) {
           onPress={() => setModalVisible(true)}
           activeOpacity={0.8}
         >
-          <Plus size={22} color="#ffffff" />
+          <Plus size={20} color="#ffffff" />
         </TouchableOpacity>
       </View>
 
@@ -100,7 +100,7 @@ export function FournisseursScreen({ navigation }) {
         data={fournisseurs}
         keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={themeColors.primary} />}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: 30 + insets.bottom }]}
         ListEmptyComponent={
           !loading && (
             <Card style={styles.emptyCard}>
@@ -178,7 +178,7 @@ export function FournisseursScreen({ navigation }) {
           </View>
         </View>
       </Modal>
-    </View>
+    </ScreenContainer>
   );
 }
 

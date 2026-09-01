@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router';
-import { 
-  LayoutDashboard, Building2, Truck, ShoppingCart, 
-  X, HardHat, FileText, Calendar, Users,
+import {
+  LayoutDashboard, Building2, Truck, ShoppingCart,
+  X, FileText, Calendar, Users,
   PanelLeft, FileSpreadsheet, Boxes, Briefcase
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -10,13 +10,15 @@ import { useTheme } from '../../context/ThemeContext';
 export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }) {
   const { user } = useAuth();
   const { theme } = useTheme();
-  
+
   const navItems = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Tableau de Bord' },
     { to: '/chantiers', icon: Building2, label: 'Chantiers' },
     { to: '/devis', icon: FileSpreadsheet, label: 'Devis' },
     { to: '/planning', icon: Calendar, label: 'Planning' },
-    { to: '/ouvriers', icon: Users, label: 'Ouvriers & Intervenants' },
+    {
+      to: '/ouvriers', icon: Users, label: 'Ouvriers '
+    },
     { to: '/stocks', icon: Boxes, label: 'Stocks & Matériaux' },
     { to: '/fournisseurs', icon: Truck, label: 'Fournisseurs' },
     { to: '/commandes', icon: ShoppingCart, label: 'Commandes' },
@@ -27,7 +29,7 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
     <>
       {/* Mobile overlay */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-40 backdrop-blur-sm lg:hidden transition-opacity"
           style={{ backgroundColor: 'var(--overlay-bg)' }}
           onClick={onClose}
@@ -35,25 +37,23 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
       )}
 
       {/* Sidebar */}
-      <div 
-        className={`fixed inset-y-0 left-0 z-50 transform transition-all duration-300 ease-in-out lg:translate-x-0 flex flex-col theme-transition ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        } ${isCollapsed ? 'lg:w-16' : 'lg:w-64'} w-64`}
-        style={{ 
+      <div
+        className={`fixed inset-y-0 left-0 z-50 transform transition-all duration-300 ease-in-out lg:translate-x-0 flex flex-col theme-transition ${isOpen ? 'translate-x-0' : '-translate-x-full'
+          } ${isCollapsed ? 'lg:w-16' : 'lg:w-64'} w-64`}
+        style={{
           backgroundColor: 'var(--bg-primary)',
           borderRight: '1px solid var(--border-primary)'
         }}
       >
-        
+
         {/* Top Header Area */}
-        <div 
-          className={`h-16 flex items-center ${
-            isCollapsed ? 'lg:justify-center px-2' : 'justify-between px-4'
-          } transition-all duration-300`} 
+        <div
+          className={`h-16 flex items-center ${isCollapsed ? 'lg:justify-center px-2' : 'justify-between px-4'
+            } transition-all duration-300`}
           style={{ borderBottom: '1px solid var(--border-primary)' }}
         >
           {isCollapsed ? (
-            <button 
+            <button
               onClick={onToggleCollapse}
               className="hidden lg:flex p-2 rounded-xl transition-all duration-200 hover:bg-[#0284C7]/10 hover:text-[#0284C7]"
               style={{ color: 'var(--text-tertiary)' }}
@@ -64,15 +64,15 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
           ) : (
             <>
               <div className="flex items-center space-x-3 min-w-0">
-                <div className="p-2 rounded-xl bg-gradient-to-tr from-[#0284C7] to-[#38BDF8] text-white shadow-md shadow-[#0284C7]/20 flex items-center justify-center flex-shrink-0">
-                  <HardHat className="h-5 w-5" />
+                <div className="p-1 rounded-xl bg-white shadow-md shadow-[#0284C7]/20 flex items-center justify-center flex-shrink-0">
+                  <img src="/logo.png" alt="BTP Manager" className="h-7 w-7 object-contain" />
                 </div>
                 <span className="text-base font-bold tracking-tight whitespace-nowrap truncate" style={{ color: 'var(--text-primary)' }}>
                   BTP Manager
                 </span>
               </div>
 
-              <button 
+              <button
                 onClick={onToggleCollapse}
                 className="hidden lg:flex p-1.5 rounded-xl transition-all duration-200 hover:bg-[#0284C7]/10 hover:text-[#0284C7] flex-shrink-0 ml-2"
                 style={{ color: 'var(--text-tertiary)' }}
@@ -106,23 +106,20 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
                 to={item.to}
                 onClick={onClose}
                 title={isCollapsed ? item.label : undefined}
-                className={({ isActive }) => 
-                  `flex items-center rounded-xl transition-all duration-200 group relative font-medium text-sm ${
-                    isCollapsed ? 'lg:justify-center lg:px-0 lg:py-3 px-3.5 py-3' : 'px-3.5 py-3'
-                  } ${
-                    isActive 
-                      ? 'bg-[#0284C7] text-white shadow-lg shadow-[#0284C7]/25 font-semibold' 
-                      : 'hover:bg-[#0284C7]/10 hover:text-[#0284C7]'
+                className={({ isActive }) =>
+                  `flex items-center rounded-xl transition-all duration-200 group relative font-medium text-sm ${isCollapsed ? 'lg:justify-center lg:px-0 lg:py-3 px-3.5 py-3' : 'px-3.5 py-3'
+                  } ${isActive
+                    ? 'bg-[#0284C7] text-white shadow-lg shadow-[#0284C7]/25 font-semibold'
+                    : 'hover:bg-[#0284C7]/10 hover:text-[#0284C7]'
                   }`
                 }
                 style={({ isActive }) => isActive ? {} : { color: 'var(--text-tertiary)' }}
               >
                 {({ isActive }) => (
                   <>
-                    <Icon className={`h-5 w-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 ${
-                      !isCollapsed ? 'mr-3 group-hover:translate-x-0.5' : ''
-                    } ${isActive ? 'text-white' : ''}`} />
-                    
+                    <Icon className={`h-5 w-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 ${!isCollapsed ? 'mr-3 group-hover:translate-x-0.5' : ''
+                      } ${isActive ? 'text-white' : ''}`} />
+
                     {!isCollapsed && (
                       <span className="truncate">{item.label}</span>
                     )}
@@ -135,11 +132,10 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
 
         {/* User Info Bottom (Simple Profile Badge) */}
         <div className={isCollapsed ? 'p-2' : 'p-3'} style={{ borderTop: '1px solid var(--border-primary)' }}>
-          <div 
-            className={`flex items-center rounded-xl transition-all duration-200 ${
-              isCollapsed ? 'lg:justify-center lg:p-2 p-3' : 'p-3'
-            }`}
-            style={{ 
+          <div
+            className={`flex items-center rounded-xl transition-all duration-200 ${isCollapsed ? 'lg:justify-center lg:p-2 p-3' : 'p-3'
+              }`}
+            style={{
               backgroundColor: 'var(--bg-hover)',
               border: '1px solid var(--border-secondary)'
             }}

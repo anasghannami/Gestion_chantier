@@ -36,7 +36,9 @@ const seed = async () => {
     
     console.log('Création des utilisateurs...');
     const mot_de_passe_hash = await bcrypt.hash('othmane12345', 10);
+    const anass_hash = await bcrypt.hash('anas1234', 10);
     await Utilisateur.bulkCreate([
+      { nom: 'Ghamam', prenom: 'Anass', email: 'anassghamam60@gmail.com', mot_de_passe_hash: anass_hash, role: 'Admin', statut: 'Actif' },
       { nom: 'Znidi', prenom: 'Othmane', email: 'othmaneznidi@gmail.com', mot_de_passe_hash, role: 'Admin' },
       { nom: 'Tazi', prenom: 'Karim', email: 'conducteur@chantier.ma', mot_de_passe_hash, role: 'Conducteur' },
       { nom: 'Alaoui', prenom: 'Fatima Zahra', email: 'achats@chantier.ma', mot_de_passe_hash, role: 'Achats' },

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal, ScrollView, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
-import { Header } from '../components/ui/Header';
+import { ScreenContainer } from '../components/ui/ScreenContainer';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
@@ -11,6 +12,7 @@ import { Plus, Search, MapPin, Calendar, DollarSign, X } from 'lucide-react-nati
 
 export function ChantiersScreen({ navigation }) {
   const { themeColors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [chantiers, setChantiers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -81,9 +83,7 @@ export function ChantiersScreen({ navigation }) {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
-      <Header title="Chantiers" />
-
+    <ScreenContainer headerTitle="Chantiers" hasTabBar={true}>
       {/* Top Search and Add Action */}
       <View style={styles.topBar}>
         <View style={styles.searchWrap}>
@@ -107,7 +107,7 @@ export function ChantiersScreen({ navigation }) {
         data={filteredChantiers}
         keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={themeColors.primary} />}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: 80 + insets.bottom }]}
         ListEmptyComponent={
           !loading && (
             <Card style={styles.emptyCard}>
@@ -184,7 +184,7 @@ export function ChantiersScreen({ navigation }) {
           </View>
         </View>
       </Modal>
-    </View>
+    </ScreenContainer>
   );
 }
 

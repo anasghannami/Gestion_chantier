@@ -12,11 +12,19 @@ build/
 dist-desktop/
 server/uploads/
 
+# Base de données SQLite embarquée (données locales, jamais versionnées)
+server/data/
+*.sqlite
+*.sqlite3
+
 # Environment variables (données sensibles)
 .env
 *.env
 server/.env
 client/.env
+
+# Sauvegardes locales (anciens logos/icônes)
+.logo-backup/
 
 # Logs & OS
 *.log

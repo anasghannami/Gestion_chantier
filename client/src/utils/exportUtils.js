@@ -99,6 +99,8 @@ export const exportToPDF = ({ title = 'Rapport BTP', subtitle = '', columns = []
         @page { size: A4 landscape; margin: 15mm; }
         body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #0F172A; margin: 0; padding: 20px; background-color: white; }
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #0284C7; padding-bottom: 15px; margin-bottom: 20px; }
+        .brand { display: flex; align-items: center; gap: 10px; }
+        .brand img { height: 40px; width: 40px; object-fit: contain; }
         .logo { font-size: 22px; font-weight: 800; color: #0284C7; letter-spacing: -0.5px; }
         .subtitle { font-size: 11px; color: #64748B; margin-top: 4px; }
         .meta { text-align: right; font-size: 11px; color: #64748B; }
@@ -109,9 +111,12 @@ export const exportToPDF = ({ title = 'Rapport BTP', subtitle = '', columns = []
     </head>
     <body>
       <div class="header">
-        <div>
-          <div class="logo">🏗️ BTP MANAGER</div>
-          <div class="subtitle">Gestion & Suivi d'Entreprise BTP</div>
+        <div class="brand">
+          <img src="${window.location.origin}/logo.png" alt="BTP Manager" />
+          <div>
+            <div class="logo">BTP MANAGER</div>
+            <div class="subtitle">Gestion & Suivi d'Entreprise BTP</div>
+          </div>
         </div>
         <div class="meta">
           <div><strong>Généré le :</strong> ${todayStr}</div>

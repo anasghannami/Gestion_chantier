@@ -1,3 +1,8 @@
+
+
+
+
+
 # 🏗️ Gestion de Chantier BTP — Application MVP
 
 Application full-stack de gestion de chantiers BTP avec modules Fournisseurs, Commandes, Factures et Tableau de Bord analytique.
@@ -8,14 +13,15 @@ Application full-stack de gestion de chantiers BTP avec modules Fournisseurs, Co
 |--------|-------------|
 | **Frontend** | React 19 + Vite + Tailwind CSS v4 + Recharts + Lucide React |
 | **Backend** | Node.js + Express 5 (RESTful API, architecture MVC) |
-| **Base de données** | MySQL + Sequelize ORM |
+| **Base de données** | SQLite embarquée (par défaut, zéro config, 100% hors ligne) + Sequelize ORM — PostgreSQL possible en option pour un déploiement serveur partagé |
 | **Authentification** | JWT (JSON Web Tokens) avec RBAC (4 rôles) |
 
 ## 📋 Prérequis
 
-- **Node.js** v18+ 
-- **MySQL** 8.0+ (serveur local accessible)
+- **Node.js** v18+
 - **npm** v9+
+
+Aucune base de données à installer : SQLite est embarquée et le fichier est créé automatiquement (`server/data/database.sqlite` en dev, dossier utilisateur en desktop).
 
 ## 🚀 Installation & Démarrage
 
@@ -31,19 +37,18 @@ cd ../client
 npm install
 ```
 
-### 2. Configurer la base de données
+### 2. Configurer l'environnement
 
-Éditer `server/.env` avec vos credentials MySQL :
+Copier `server/.env.example` en `server/.env` (rien à changer pour la base de données — SQLite est utilisée par défaut) :
 
 ```env
-DB_HOST=localhost
-DB_USER=root
-DB_PASS=
-DB_NAME=gestion_chantier
-DB_PORT=3306
+DB_DIALECT=sqlite
+DB_STORAGE=
 JWT_SECRET=super_secret_jwt_chantier_2024
 PORT=5000
 ```
+
+Déploiement optionnel sur PostgreSQL : décommenter le bloc `DB_DIALECT=postgres` / `DB_HOST` / `DB_USER` / ... dans `.env`.
 
 ### 3. Lancer les seeders (créer la BDD + données de test)
 

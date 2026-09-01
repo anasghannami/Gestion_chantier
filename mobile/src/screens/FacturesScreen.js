@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal, ScrollView, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
-import { Header } from '../components/ui/Header';
+import { ScreenContainer } from '../components/ui/ScreenContainer';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import api from '../api/axios';
-import { Plus, FileText, DollarSign, Calendar, CheckCircle2, X } from 'lucide-react-native';
+import { Plus, X } from 'lucide-react-native';
 
 export function FacturesScreen({ navigation }) {
   const { themeColors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [factures, setFactures] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -45,7 +47,7 @@ export function FacturesScreen({ navigation }) {
 
   const handleCreate = async () => {
     if (!numero || !montant) {
-      Alert.alert('Champs requis', 'Veuillez remplir le numéro de facture et le montant.');
+      Alert.alert('Champs requis', 'Veuillez renseigner le numéro et le montant.');
       return;
     }
 
@@ -55,8 +57,7 @@ export function FacturesScreen({ navigation }) {
         numero,
         montant: parseFloat(montant) || 0,
         type,
-        statut: 'En attente',
-        date_facture: new Date().toISOString(),
+        statut: 'En attente'
       });
 
       setModalVisible(false);
@@ -71,20 +72,17 @@ export function FacturesScreen({ navigation }) {
     }
   };
 
-  const handleToggleStatut = async (factureId, currentStatut) => {
-    const nextStatut = currentStatut === 'Payée' || currentStatut === 'PAYEE' ? 'En attente' : 'Payée';
+  const handleStatusChange = async (factId, newStatut) => {
     try {
-      await api.put(`/factures/${factureId}`, { statut: nextStatut });
-      setFactures(prev => prev.map(f => f.id === factureId ? { ...f, statut: nextStatut } : f));
+      await api.put(`/factures/${factId}`, { statut: newStatut });
+      setFactures(prev => prev.map(f => f.id === factId ? { ...f, statut: newStatut } : f));
     } catch (e) {
       console.error('Erreur MAJ statut facture:', e);
     }
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
-      <Header title="Factures & Règlement" />
-
+    <ScreenContainer headerTitle="Factures & Règlement" showBack={true}>
       <View style={styles.topBar}>
         <Text style={[styles.subTitle, { color: themeColors.textSecondary }]}>
           Facturation clients & fournisseurs
@@ -94,7 +92,7 @@ export function FacturesScreen({ navigation }) {
           onPress={() => setModalVisible(true)}
           activeOpacity={0.8}
         >
-          <Plus size={22} color="#ffffff" />
+          <Plus size={20} color="#ffffff" />
         </TouchableOpacity>
       </View>
 
@@ -102,7 +100,7 @@ export function FacturesScreen({ navigation }) {
         data={factures}
         keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={themeColors.primary} />}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: 30 + insets.bottom }]}
         ListEmptyComponent={
           !loading && (
             <Card style={styles.emptyCard}>
@@ -185,7 +183,7 @@ export function FacturesScreen({ navigation }) {
           </View>
         </View>
       </Modal>
-    </View>
+    </ScreenContainer>
   );
 }
 

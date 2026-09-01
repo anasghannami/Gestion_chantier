@@ -1,12 +1,12 @@
 import { Fournisseur, Commande, Chantier } from '../models/index.js';
-import { Op } from 'sequelize';
+import { iLike } from '../utils/dbOps.js';
 
 export const getAllFournisseurs = async (req, res, next) => {
   const { search, categorie } = req.query;
   const where = {};
-  
+
   if (search) {
-    where.raison_sociale = { [Op.iLike]: `%${search}%` };
+    where.raison_sociale = { [iLike]: `%${search}%` };
   }
   if (categorie) {
     where.categorie = categorie;

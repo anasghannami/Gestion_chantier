@@ -38,6 +38,11 @@
   --chart-grid: #334155;
   --chart-text: #94A3B8;
   --chart-tick: #CBD5E1;
+  --success: #4ADE80;
+  --success-bg: rgba(34, 197, 94, 0.15);
+  --warning: #FB923C;
+  --warning-bg: rgba(234, 88, 12, 0.18);
+  --danger: #F87171;
 }
 
 /* ===== LIGHT THEME ===== */
@@ -62,6 +67,11 @@
   --chart-grid: #E2E8F0;
   --chart-text: #64748B;
   --chart-tick: #475569;
+  --success: #15803D;
+  --success-bg: rgba(22, 163, 74, 0.12);
+  --warning: #C2410C;
+  --warning-bg: rgba(234, 88, 12, 0.12);
+  --danger: #B91C1C;
 }
 
 body {

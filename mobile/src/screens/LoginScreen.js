@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
-import { Sun, Moon, HardHat } from 'lucide-react-native';
+import { Sun, Moon } from 'lucide-react-native';
 
 export function LoginScreen() {
   const [email, setEmail] = useState('admin@chantier.fr');
@@ -53,8 +53,8 @@ export function LoginScreen() {
         </View>
 
         <View style={styles.logoContainer}>
-          <View style={[styles.iconCircle, { backgroundColor: themeColors.primaryBackground }]}>
-            <HardHat size={42} color={themeColors.primary} />
+          <View style={[styles.iconCircle, { backgroundColor: '#FFFFFF' }]}>
+            <Image source={require('../../assets/icon.png')} style={styles.logoImg} resizeMode="contain" />
           </View>
           <Text style={[styles.title, { color: themeColors.text }]}>
             Gestion Chantier
@@ -124,10 +124,15 @@ const styles = StyleSheet.create({
   iconCircle: {
     width: 80,
     height: 80,
-    borderRadius: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
+    overflow: 'hidden',
+  },
+  logoImg: {
+    width: 64,
+    height: 64,
   },
   title: {
     fontSize: 26,

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -98,8 +99,11 @@ function DummyComponent() {
 
 function MainTabNavigator({ navigation }) {
   const { themeColors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [unreadCount, setUnreadCount] = useState(0);
   const [addModalVisible, setAddModalVisible] = useState(false);
+
+  const tabBarHeight = Platform.OS === 'ios' ? 54 + insets.bottom : 62 + insets.bottom;
 
   useEffect(() => {
     const checkBadge = async () => {
@@ -130,8 +134,8 @@ function MainTabNavigator({ navigation }) {
           tabBarStyle: {
             backgroundColor: themeColors.tabBar,
             borderTopColor: themeColors.tabBarBorder,
-            height: 62,
-            paddingBottom: 8,
+            height: tabBarHeight,
+            paddingBottom: Math.max(insets.bottom, 6),
             paddingTop: 6,
           },
           tabBarActiveTintColor: themeColors.activeTab,

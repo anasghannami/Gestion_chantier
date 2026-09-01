@@ -40,18 +40,29 @@ function waitForServer(url, timeoutMs = 30000) {
 function startBackendServer() {
   const serverPath = path.join(__dirname, 'server/src/app.js');
 
+  // Base de données embarquée SQLite (aucun service externe, 100% hors ligne).
+  //  - App packagée (.exe distribué) : fichier dans le dossier utilisateur,
+  //    toujours accessible en écriture et conservé entre les mises à jour.
+  //  - En dev / lancement via .bat (non packagé) : on réutilise la MÊME base
+  //    que `npm run dev` (server/data/database.sqlite) pour éviter d'avoir
+  //    deux bases distinctes sur la machine.
+  const dbStorage = app.isPackaged
+    ? path.join(app.getPath('userData'), 'database.sqlite')
+    : path.join(__dirname, 'server', 'data', 'database.sqlite');
+  const env = { ...process.env, PORT: '5000', DB_DIALECT: 'sqlite', DB_STORAGE: dbStorage, ELECTRON_RUN_AS_NODE: '1' };
+
   try {
     // Utiliser fork pour exécuter le serveur avec l'environnement Node d'Electron
     serverProcess = fork(serverPath, [], {
       cwd: path.join(__dirname, 'server'),
-      env: { ...process.env, PORT: '5000', ELECTRON_RUN_AS_NODE: '1' },
+      env,
       silent: true
     });
   } catch (err) {
     console.warn('Fork échoué, tentative via spawn avec shell:', err);
     serverProcess = spawn('node', [serverPath], {
       cwd: path.join(__dirname, 'server'),
-      env: { ...process.env, PORT: '5000' },
+      env,
       shell: true
     });
   }
